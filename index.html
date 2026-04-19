@@ -133,6 +133,13 @@
         .icon-btn:hover { background: #0ff; color: #000; }
         .icon-btn.disabled { color: #888; border-color: #555; text-shadow: none; }
 
+        /* Share Buttons Section */
+        .share-section {
+            margin-top: 20px; padding-top: 15px;
+            border-top: 1px solid rgba(0, 255, 255, 0.2); width: 80%;
+        }
+        .share-btn { font-size: 16px; padding: 8px 12px; }
+        
         .controls-hint { font-size: 11px; color: #aaa; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
         
         #credits { text-align: center; padding: 10px; font-size: 11px; letter-spacing: 1px; background: rgba(0, 0, 0, 0.85); pointer-events: auto; border-top: 1px solid rgba(0,255,255,0.3); }
@@ -214,6 +221,16 @@
             <h1 class="neon-text-red">SYSTEM FAILURE</h1>
             <p style="margin-top:10px;">Final Score</p>
             <p><span id="final-score" style="color:#0ff; font-weight:900; font-size: 36px; text-shadow: 0 0 15px #0ff;">0</span></p>
+            
+            <div class="share-section">
+                <p style="font-size: 11px; color: #aaa; margin-bottom: 5px;">SHARE YOUR SCORE</p>
+                <div class="btn-row" style="justify-content: center; margin-top: 5px;">
+                    <button class="icon-btn share-btn" onclick="shareScore('x')" title="Share on X">𝕏</button>
+                    <button class="icon-btn share-btn" onclick="shareScore('wa')" title="Share on WhatsApp">💬</button>
+                    <button class="icon-btn share-btn" onclick="shareScore('copy')" title="Copy Link">📋 COPY</button>
+                </div>
+            </div>
+
             <button class="action-btn" onclick="initGame()" style="margin-top: 20px;">REBOOT [ENTER]</button>
         </div>
     </div>
@@ -275,6 +292,27 @@
     function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
     function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
 
+    // Sharing System
+    function shareScore(platform) {
+        // Use your actual website URL if playing locally, otherwise uses current URL
+        let url = window.location.href; 
+        if (url.includes('file://')) url = 'http://www.waliulawaltaha.com'; 
+        
+        const text = `I just survived the Neon Highway and scored ${score}! 🏎️✨ Can you beat my high score?`;
+        
+        if (platform === 'x') {
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        } else if (platform === 'wa') {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`, '_blank');
+        } else if (platform === 'copy') {
+            navigator.clipboard.writeText(`${text} Play here: ${url}`).then(() => {
+                alert("Score and link copied to clipboard!");
+            }).catch(err => {
+                alert("Failed to copy text. Please try again.");
+            });
+        }
+    }
+
     // Game Variables
     let animationId; let lastTime = 0;
     let score = 0; let level = 1; let combo = 0; let multiplier = 1;
@@ -320,9 +358,7 @@
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
-        if(e.key === 'Enter') {
-            if(!isGameRunning || isGameOver) initGame();
-        }
+        if(e.key === 'Enter') { if(!isGameRunning || isGameOver) initGame(); }
     });
     window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = false; });
     window.addEventListener('blur', () => { for (let key in keys) keys[key] = false; targetX = null; if(isGameRunning && !isGameOver && !isPaused) togglePause(); });
@@ -460,10 +496,8 @@
         if (collectibleTimer > 2000) {
             if(Math.random() > 0.3) { 
                 let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20; 
-                let rand = Math.random();
-                let type = 'gold';
-                if(rand > 0.90) type = 'shield';
-                else if(rand > 0.80) type = 'magnet';
+                let rand = Math.random(); let type = 'gold';
+                if(rand > 0.90) type = 'shield'; else if(rand > 0.80) type = 'magnet';
                 collectibles.push({x: x, y: -s, width: s, height: s, type: type}); 
             }
             collectibleTimer = 0;
@@ -488,13 +522,10 @@
                 let dx = (player.x + player.width/2) - (collectibles[i].x + collectibles[i].width/2);
                 let dy = (player.y + player.height/2) - (collectibles[i].y + collectibles[i].height/2);
                 let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 250) { // pull radius
-                    collectibles[i].x += (dx / dist) * 12 * timeScale;
-                    collectibles[i].y += (dy / dist) * 12 * timeScale;
+                if (dist < 250) { 
+                    collectibles[i].x += (dx / dist) * 12 * timeScale; collectibles[i].y += (dy / dist) * 12 * timeScale;
                 }
-            } else {
-                collectibles[i].y += moveDist; 
-            }
+            } else { collectibles[i].y += moveDist; }
 
             let hoverY = collectibles[i].y + Math.sin(Date.now() / 150) * 3; let cBox = {x: collectibles[i].x, y: hoverY, width: collectibles[i].width, height: collectibles[i].height};
             
@@ -503,12 +534,9 @@
                     combo++;
                     if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2;
                     updateHUD();
-                    
                     let pitch = 1 + (multiplier * 0.1); soundCollect(pitch); 
                     createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400); 
-                    
-                    let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0';
-                    let txt = `+${50 * multiplier}`;
+                    let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0'; let txt = `+${50 * multiplier}`;
                     floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, txt, col, 1 + (multiplier*0.2))); 
                     addScore(50 * multiplier); 
                 } else if (collectibles[i].type === 'shield') {
@@ -520,10 +548,7 @@
                 }
                 collectibles.splice(i, 1); i--; continue;
             }
-            if (collectibles[i].y > canvas.height) { 
-                if(collectibles[i].type === 'gold') breakCombo();
-                collectibles.splice(i, 1); i--; 
-            }
+            if (collectibles[i].y > canvas.height) { if(collectibles[i].type === 'gold') breakCombo(); collectibles.splice(i, 1); i--; }
         }
 
         for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); }
@@ -556,11 +581,8 @@
     function draw() {
         ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw Road Chevrons
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-        for(let c of chevrons) {
-            ctx.beginPath(); ctx.moveTo(canvas.width/2 - 60, c.y - 30); ctx.lineTo(canvas.width/2, c.y); ctx.lineTo(canvas.width/2 + 60, c.y - 30); ctx.stroke();
-        }
+        for(let c of chevrons) { ctx.beginPath(); ctx.moveTo(canvas.width/2 - 60, c.y - 30); ctx.lineTo(canvas.width/2, c.y); ctx.lineTo(canvas.width/2 + 60, c.y - 30); ctx.stroke(); }
 
         ctx.fillStyle = 'rgba(0, 255, 255, 0.3)'; for(let line of speedLines) ctx.fillRect(line.x, line.y, 2, line.len);
         ctx.fillStyle = '#111'; ctx.fillRect(0, 0, 15, canvas.height); ctx.fillRect(canvas.width - 15, 0, 15, canvas.height); 
