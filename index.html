@@ -24,7 +24,7 @@
         #game-container {
             position: relative; width: 400px; height: 600px; background-color: #080812;
             border: 2px solid #0ff; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 30px rgba(0, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 30px rgba(0, 255, 255, 0.15), inset 0 0 80px rgba(0,0,0,0.8);
             overflow: hidden; cursor: crosshair;
         }
 
@@ -54,6 +54,7 @@
 
         canvas { display: block; }
 
+        /* HUD Improvements */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -62,22 +63,26 @@
 
         #hud {
             display: flex; justify-content: space-between; align-items: flex-start;
-            padding: 15px; display: none; background: linear-gradient(rgba(0,0,0,0.9), transparent);
+            padding: 15px; display: none; background: linear-gradient(rgba(0,0,0,0.95), transparent);
         }
 
-        .hud-col { display: flex; flex-direction: column; gap: 10px; }
+        .hud-col { display: flex; flex-direction: column; gap: 8px; }
         .hud-box { text-align: left; }
         .hud-box.right { text-align: right; }
         .hud-box.center { text-align: center; flex: 1; }
         
         .hud-title { font-size: 10px; color: #0ff; letter-spacing: 1px; opacity: 0.8; margin-bottom: 2px; }
-        .hud-value { font-size: 20px; font-weight: 700; color: #fff; text-shadow: 0 0 10px #0ff; }
+        .hud-value { font-size: 18px; font-weight: 700; color: #fff; text-shadow: 0 0 10px #0ff; }
         
-        #speedometer .hud-value { font-size: 24px; font-weight: 900; font-style: italic; color: #f0f; text-shadow: 0 0 12px #f0f; }
+        #speedometer .hud-value { font-size: 22px; font-weight: 900; font-style: italic; color: #f0f; text-shadow: 0 0 12px #f0f; }
         #high-score .hud-value { color: #ff0; text-shadow: 0 0 10px #ff0; }
         
-        #shield-status { font-size: 12px; font-weight: bold; color: #f00; text-shadow: 0 0 5px #f00; transition: 0.3s; }
+        #shield-status, #combo-status { font-size: 12px; font-weight: bold; color: #f00; text-shadow: 0 0 5px #f00; transition: 0.3s; }
         #shield-status.active { color: #0bf; text-shadow: 0 0 8px #0bf; }
+        #combo-status.active { color: #ff0; text-shadow: 0 0 8px #ff0; font-size: 14px; }
+
+        #magnet-bar-container { width: 100%; height: 4px; background: rgba(255,255,255,0.2); margin-top: 5px; display: none; }
+        #magnet-bar { width: 100%; height: 100%; background: #b0f; box-shadow: 0 0 8px #b0f; }
 
         .screen-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -97,22 +102,23 @@
 
         #game-over, #pause-screen { display: none; opacity: 0; }
 
-        h1 { margin: 0 0 10px 0; font-size: 42px; font-weight: 900; color: #fff; letter-spacing: 2px; }
+        h1 { margin: 0 0 10px 0; font-size: 40px; font-weight: 900; color: #fff; letter-spacing: 2px; }
         .neon-text-blue { text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #00f; }
         .neon-text-red { text-shadow: 0 0 10px #f00, 0 0 20px #f00, 0 0 40px #900; }
         .neon-text-magenta { text-shadow: 0 0 10px #f0f, 0 0 20px #f0f; }
 
-        .stats { background: rgba(0,0,0,0.6); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-        p { margin: 8px 0; font-size: 14px; color: #ddd; }
+        .stats { background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        p { margin: 6px 0; font-size: 13px; color: #ddd; }
         .highlight-gold { color: #ff0; font-weight: bold; text-shadow: 0 0 5px #ff0; }
         .highlight-blue { color: #0bf; font-weight: bold; text-shadow: 0 0 5px #0bf; }
+        .highlight-purple { color: #b0f; font-weight: bold; text-shadow: 0 0 5px #b0f; }
 
-        .insert-coin { animation: blink 1.2s infinite; color: #0ff; font-size: 18px; margin-top: 15px; text-shadow: 0 0 10px #0ff; font-weight: bold; }
+        .insert-coin { animation: blink 1.2s infinite; color: #0ff; font-size: 16px; margin-top: 10px; text-shadow: 0 0 10px #0ff; font-weight: bold; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        .btn-row { display: flex; gap: 15px; margin-top: 20px; }
+        .btn-row { display: flex; gap: 15px; margin-top: 15px; }
         button.action-btn {
-            padding: 15px 30px; font-size: 16px; font-family: inherit; font-weight: 700;
+            padding: 12px 25px; font-size: 16px; font-family: inherit; font-weight: 700;
             background: rgba(0, 255, 255, 0.05); color: #0ff; border: 2px solid #0ff;
             border-radius: 8px; cursor: pointer; text-transform: uppercase;
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.2s ease;
@@ -121,13 +127,13 @@
         
         .icon-btn {
             background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,255,0.5); color: #0ff;
-            font-size: 14px; padding: 8px 12px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; padding: 6px 10px; border-radius: 6px; cursor: pointer;
             transition: 0.2s; font-family: 'Orbitron', sans-serif; pointer-events: auto;
         }
         .icon-btn:hover { background: #0ff; color: #000; }
         .icon-btn.disabled { color: #888; border-color: #555; text-shadow: none; }
 
-        .controls-hint { font-size: 11px; color: #aaa; margin-top: 25px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .controls-hint { font-size: 11px; color: #aaa; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
         
         #credits { text-align: center; padding: 10px; font-size: 11px; letter-spacing: 1px; background: rgba(0, 0, 0, 0.85); pointer-events: auto; border-top: 1px solid rgba(0,255,255,0.3); }
         #credits a { color: #f0f; text-decoration: none; font-weight: bold; transition: 0.3s; }
@@ -150,14 +156,15 @@
                         <div class="hud-value" id="score">0</div>
                     </div>
                     <div class="hud-box">
-                        <div class="hud-title">SHIELD</div>
-                        <div id="shield-status">OFFLINE</div>
+                        <div class="hud-title">COMBO</div>
+                        <div id="combo-status">x1</div>
                     </div>
                 </div>
                 
                 <div class="hud-box center" id="speedometer">
                     <div class="hud-title">SPEED</div>
                     <div class="hud-value" id="speed-display">120</div>
+                    <div id="magnet-bar-container"><div id="magnet-bar"></div></div>
                 </div>
 
                 <div class="hud-col">
@@ -166,7 +173,8 @@
                         <div class="hud-value" id="high-score-val">0</div>
                     </div>
                     <div class="hud-box right">
-                        <button class="icon-btn" onclick="togglePause()">II PAUSE</button>
+                        <div class="hud-title">SHIELD</div>
+                        <div id="shield-status">OFFLINE</div>
                     </div>
                 </div>
             </div>
@@ -177,10 +185,11 @@
             <div class="grid-bg"></div>
             <h1 class="neon-text-blue">NEON HIGHWAY</h1>
             <div class="stats">
-                <p>Collect <span class="highlight-gold">Gold Cubes</span> (+50 Pts)</p>
-                <p>Grab <span class="highlight-blue">Energy Shields</span> (1 Extra Life)</p>
+                <p>Collect <span class="highlight-gold">Gold</span> to build Combo Multipliers!</p>
+                <p>Grab <span class="highlight-blue">Shields</span> to deflect one crash.</p>
+                <p>Grab <span class="highlight-purple">Magnets</span> to auto-collect gold.</p>
             </div>
-            <div class="insert-coin" onclick="initGame()">TAP TO START ENGINE</div>
+            <div class="insert-coin" onclick="initGame()">PRESS ENTER OR TAP TO START</div>
             
             <div class="btn-row">
                 <button class="icon-btn" id="crt-toggle" onclick="toggleCRT()">CRT: ON</button>
@@ -193,7 +202,7 @@
         <div id="pause-screen" class="screen-overlay">
             <h1 class="neon-text-magenta">PAUSED</h1>
             <div class="btn-row">
-                <button class="action-btn" onclick="togglePause()">RESUME</button>
+                <button class="action-btn" onclick="togglePause()">RESUME [ESC]</button>
             </div>
             <div class="btn-row">
                 <button class="icon-btn" id="crt-toggle-pause" onclick="toggleCRT()">CRT: ON</button>
@@ -203,9 +212,9 @@
 
         <div id="game-over" class="screen-overlay">
             <h1 class="neon-text-red">SYSTEM FAILURE</h1>
-            <p style="margin-top:20px;">Final Score</p>
+            <p style="margin-top:10px;">Final Score</p>
             <p><span id="final-score" style="color:#0ff; font-weight:900; font-size: 36px; text-shadow: 0 0 15px #0ff;">0</span></p>
-            <button class="action-btn" onclick="initGame()" style="margin-top: 30px;">REBOOT SYSTEM</button>
+            <button class="action-btn" onclick="initGame()" style="margin-top: 20px;">REBOOT [ENTER]</button>
         </div>
     </div>
 </div>
@@ -219,6 +228,9 @@
     const gameContainer = document.getElementById('game-container');
     const flashOverlay = document.getElementById('screen-flash');
     const scoreElement = document.getElementById('score');
+    const comboStatus = document.getElementById('combo-status');
+    const magnetBarContainer = document.getElementById('magnet-bar-container');
+    const magnetBar = document.getElementById('magnet-bar');
     const highScoreElement = document.getElementById('high-score-val');
     const speedDisplay = document.getElementById('speed-display');
     const shieldStatus = document.getElementById('shield-status');
@@ -244,7 +256,6 @@
     // Preferences
     let savedHighScore = localStorage.getItem('neonHighScore') || 0;
     highScoreElement.innerText = savedHighScore;
-
     let crtEnabled = localStorage.getItem('neonCRT') !== 'false'; 
     let soundEnabled = localStorage.getItem('neonSND') !== 'false'; 
 
@@ -261,17 +272,18 @@
         else { sndBtn.classList.remove('disabled'); sndBtnPause.classList.remove('disabled'); }
     }
     applyPreferences();
-
     function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
     function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
 
+    // Game Variables
     let animationId; let lastTime = 0;
-    let score = 0; let level = 1; let baseSpeed = 0.35; let currentSpeed = baseSpeed;
-    let spawnTimer = 0; let spawnInterval = 1400; let collectibleTimer = 0;
+    let score = 0; let level = 1; let combo = 0; let multiplier = 1;
+    let baseSpeed = 0.35; let currentSpeed = baseSpeed;
+    let spawnTimer = 0; let spawnInterval = 1400; let collectibleTimer = 0; let chevronTimer = 0;
     let isGameOver = false; let isGameRunning = false; let isPaused = false;
     let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; let targetX = null; 
 
-    let player = {}; let obstacles = []; let collectibles = []; let laneMarkers = [];
+    let player = {}; let obstacles = []; let collectibles = []; let laneMarkers = []; let chevrons = [];
     let particles = []; let speedLines = []; let floatingTexts = [];
 
     const ENEMY_TYPES = [
@@ -290,9 +302,11 @@
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
     function soundStart() { playTone(400, 'square', 0.1, 0.1); setTimeout(() => playTone(600, 'square', 0.3, 0.1), 100); }
-    function soundCollect() { playTone(880, 'sine', 0.1, 0.1); setTimeout(() => playTone(1760, 'sine', 0.2, 0.1), 80); }
+    function soundCollect(pitchMod = 1) { playTone(880 * pitchMod, 'sine', 0.1, 0.1); setTimeout(() => playTone(1760 * pitchMod, 'sine', 0.2, 0.1), 80); }
     function soundShieldUp() { playTone(300, 'sine', 0.1, 0.1); setTimeout(() => playTone(400, 'sine', 0.3, 0.1), 100); }
+    function soundMagnetUp() { playTone(500, 'square', 0.1, 0.1); setTimeout(() => playTone(700, 'square', 0.3, 0.1), 100); }
     function soundShieldDown() { playTone(200, 'sawtooth', 0.2, 0.15); setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.15), 100); }
+    function soundComboDrop() { playTone(150, 'square', 0.2, 0.15); }
     function soundLevelUp() { playTone(440, 'square', 0.1, 0.1); setTimeout(() => playTone(554, 'square', 0.1, 0.1), 100); setTimeout(() => playTone(659, 'square', 0.3, 0.1), 200); }
     function soundCrash() {
         if (!soundEnabled || !audioCtx) return;
@@ -306,6 +320,9 @@
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
+        if(e.key === 'Enter') {
+            if(!isGameRunning || isGameOver) initGame();
+        }
     });
     window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = false; });
     window.addEventListener('blur', () => { for (let key in keys) keys[key] = false; targetX = null; if(isGameRunning && !isGameOver && !isPaused) togglePause(); });
@@ -344,7 +361,19 @@
     }
     function createExplosion(x, y, color, amount=30, speed=15, life=800) { for (let i = 0; i < amount; i++) particles.push(new Particle(x, y, color, speed, life)); }
     function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
-    function updateShieldHUD() { if(player.shield) { shieldStatus.innerText = "ONLINE"; shieldStatus.classList.add('active'); } else { shieldStatus.innerText = "OFFLINE"; shieldStatus.classList.remove('active'); } }
+    
+    function updateHUD() { 
+        if(player.shield) { shieldStatus.innerText = "ONLINE"; shieldStatus.classList.add('active'); } else { shieldStatus.innerText = "OFFLINE"; shieldStatus.classList.remove('active'); }
+        comboStatus.innerText = `x${multiplier}`;
+        if(multiplier > 1) comboStatus.classList.add('active'); else comboStatus.classList.remove('active');
+    }
+
+    function breakCombo() {
+        if(combo > 0) {
+            combo = 0; multiplier = 1; updateHUD(); soundComboDrop();
+            floatingTexts.push(new FloatingText(player.x + 20, player.y - 20, "COMBO BROKEN", "#f00", 0.8));
+        }
+    }
 
     function togglePause() {
         if (!isGameRunning || isGameOver) return;
@@ -356,12 +385,17 @@
     function initGame() {
         if(isGameRunning) return; 
         initAudio(); soundStart();
-        score = 0; level = 1; currentSpeed = baseSpeed; spawnInterval = 1400; spawnTimer = 0; collectibleTimer = 0;
+        score = 0; level = 1; combo = 0; multiplier = 1; currentSpeed = baseSpeed; 
+        spawnInterval = 1400; spawnTimer = 0; collectibleTimer = 0; chevronTimer = 0;
         isGameOver = false; isGameRunning = true; isPaused = false;
-        obstacles = []; collectibles = []; laneMarkers = []; particles = []; speedLines = []; floatingTexts = [];
+        obstacles = []; collectibles = []; laneMarkers = []; chevrons = []; particles = []; speedLines = []; floatingTexts = [];
         scoreElement.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
-        player = { x: 180, y: 480, width: 40, height: 75, vx: 0, acceleration: 1.0, friction: 0.80, maxSpeed: 9, color: '#0ff', shield: false };
-        updateShieldHUD(); for (let key in keys) keys[key] = false; targetX = null;
+        
+        player = { x: 180, y: 480, width: 40, height: 75, vx: 0, acceleration: 1.0, friction: 0.80, maxSpeed: 9, color: '#0ff', shield: false, magnetTime: 0 };
+        updateHUD(); for (let key in keys) keys[key] = false; targetX = null;
+        
+        magnetBarContainer.style.display = 'none';
+        
         for (let i = 0; i < 6; i++) laneMarkers.push({ y: i * 120 });
         for (let i = 0; i < 10; i++) speedLines.push({ x: Math.random() > 0.5 ? 5 : 390, y: Math.random() * 600, len: Math.random() * 50 + 20 });
         startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
@@ -377,8 +411,8 @@
     function addScore(points) {
         score += points; scoreElement.innerText = score;
         if (score > savedHighScore) { savedHighScore = score; highScoreElement.innerText = savedHighScore; localStorage.setItem('neonHighScore', savedHighScore); }
-        if (score >= level * 150) {
-            level++; currentSpeed += 0.03; spawnInterval = Math.max(500, spawnInterval - 60);
+        if (score >= level * 200) {
+            level++; currentSpeed += 0.03; spawnInterval = Math.max(500, spawnInterval - 50);
             updateSpeedometer(); soundLevelUp();
             floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, `LEVEL ${level}`, "#f0f", 2));
             floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2 + 30, "SPEED UP!", "#0ff", 1.2));
@@ -400,9 +434,21 @@
 
         if (Math.random() > 0.4) { particles.push(new Particle(player.x + 8, player.y + player.height, '#0ff', 1.5, 200)); particles.push(new Particle(player.x + player.width - 8, player.y + player.height, '#0ff', 1.5, 200)); }
 
+        // Magnet Logic
+        if (player.magnetTime > 0) {
+            player.magnetTime -= dt;
+            magnetBar.style.width = `${(player.magnetTime / 10000) * 100}%`;
+            if (player.magnetTime <= 0) magnetBarContainer.style.display = 'none';
+        }
+
         let moveDist = currentSpeed * dt;
         for (let i = 0; i < laneMarkers.length; i++) { laneMarkers[i].y += moveDist; if (laneMarkers[i].y > canvas.height) laneMarkers[i].y -= 720; }
         for (let i = 0; i < speedLines.length; i++) { speedLines[i].y += moveDist * 2.5; if (speedLines[i].y > canvas.height) { speedLines[i].y = -100; speedLines[i].x = Math.random() > 0.5 ? Math.random()*10 : canvas.width - Math.random()*10; } }
+
+        // Road Chevrons
+        chevronTimer += dt;
+        if (chevronTimer > 800) { chevrons.push({y: -50}); chevronTimer = 0; }
+        for (let i = 0; i < chevrons.length; i++) { chevrons[i].y += moveDist; if(chevrons[i].y > canvas.height) { chevrons.splice(i, 1); i--; } }
 
         spawnTimer += dt;
         if (spawnTimer > spawnInterval) {
@@ -411,8 +457,15 @@
         }
 
         collectibleTimer += dt;
-        if (collectibleTimer > 2500) {
-            if(Math.random() > 0.4) { let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20; let type = Math.random() > 0.80 ? 'shield' : 'gold'; collectibles.push({x: x, y: -s, width: s, height: s, type: type}); }
+        if (collectibleTimer > 2000) {
+            if(Math.random() > 0.3) { 
+                let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20; 
+                let rand = Math.random();
+                let type = 'gold';
+                if(rand > 0.90) type = 'shield';
+                else if(rand > 0.80) type = 'magnet';
+                collectibles.push({x: x, y: -s, width: s, height: s, type: type}); 
+            }
             collectibleTimer = 0;
         }
 
@@ -420,7 +473,7 @@
             obstacles[i].y += moveDist * obstacles[i].speedMult; 
             if (detectCollision(player, obstacles[i])) {
                 if (player.shield) {
-                    player.shield = false; updateShieldHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
+                    player.shield = false; updateHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
                     createExplosion(obstacles[i].x + 20, obstacles[i].y + 35, obstacles[i].color, 30, 15, 600);
                     floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "DEFLECTED!", "#0bf"));
                     obstacles.splice(i, 1); i--; continue;
@@ -430,18 +483,47 @@
         }
 
         for (let i = 0; i < collectibles.length; i++) {
-            collectibles[i].y += moveDist; 
+            // Magnet pull physics
+            if (collectibles[i].type === 'gold' && player.magnetTime > 0) {
+                let dx = (player.x + player.width/2) - (collectibles[i].x + collectibles[i].width/2);
+                let dy = (player.y + player.height/2) - (collectibles[i].y + collectibles[i].height/2);
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 250) { // pull radius
+                    collectibles[i].x += (dx / dist) * 12 * timeScale;
+                    collectibles[i].y += (dy / dist) * 12 * timeScale;
+                }
+            } else {
+                collectibles[i].y += moveDist; 
+            }
+
             let hoverY = collectibles[i].y + Math.sin(Date.now() / 150) * 3; let cBox = {x: collectibles[i].x, y: hoverY, width: collectibles[i].width, height: collectibles[i].height};
+            
             if (detectCollision(player, cBox, 0, 0)) {
                 if (collectibles[i].type === 'gold') {
-                    soundCollect(); createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "+50", "#ff0")); addScore(50); 
+                    combo++;
+                    if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2;
+                    updateHUD();
+                    
+                    let pitch = 1 + (multiplier * 0.1); soundCollect(pitch); 
+                    createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400); 
+                    
+                    let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0';
+                    let txt = `+${50 * multiplier}`;
+                    floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, txt, col, 1 + (multiplier*0.2))); 
+                    addScore(50 * multiplier); 
                 } else if (collectibles[i].type === 'shield') {
                     soundShieldUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#0bf', 20, 10, 500); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "SHIELD UP", "#0bf"));
-                    player.shield = true; updateShieldHUD(); addScore(10);
+                    player.shield = true; updateHUD(); addScore(10);
+                } else if (collectibles[i].type === 'magnet') {
+                    soundMagnetUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#b0f', 20, 10, 500); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "MAGNET!", "#b0f"));
+                    player.magnetTime = 10000; magnetBarContainer.style.display = 'block'; addScore(10);
                 }
                 collectibles.splice(i, 1); i--; continue;
             }
-            if (collectibles[i].y > canvas.height) { collectibles.splice(i, 1); i--; }
+            if (collectibles[i].y > canvas.height) { 
+                if(collectibles[i].type === 'gold') breakCombo();
+                collectibles.splice(i, 1); i--; 
+            }
         }
 
         for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); }
@@ -463,6 +545,10 @@
         } else if (c.type === 'shield') {
             let pulse = Math.abs(Math.sin(Date.now() / 200)) * 5; ctx.shadowBlur = 20; ctx.shadowColor = '#0bf';
             ctx.beginPath(); ctx.arc(0, 0, (c.width/2) + pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+        } else if (c.type === 'magnet') {
+            ctx.rotate(-Date.now() / 400); ctx.shadowBlur = 15; ctx.shadowColor = '#b0f'; ctx.fillStyle = '#b0f'; 
+            ctx.beginPath(); ctx.moveTo(0, -c.height/2); ctx.lineTo(c.width/2, 0); ctx.lineTo(0, c.height/2); ctx.lineTo(-c.width/2, 0); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, c.width/4, 0, Math.PI*2); ctx.fill();
         }
         ctx.restore();
     }
@@ -470,25 +556,32 @@
     function draw() {
         ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         
+        // Draw Road Chevrons
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+        for(let c of chevrons) {
+            ctx.beginPath(); ctx.moveTo(canvas.width/2 - 60, c.y - 30); ctx.lineTo(canvas.width/2, c.y); ctx.lineTo(canvas.width/2 + 60, c.y - 30); ctx.stroke();
+        }
+
         ctx.fillStyle = 'rgba(0, 255, 255, 0.3)'; for(let line of speedLines) ctx.fillRect(line.x, line.y, 2, line.len);
         ctx.fillStyle = '#111'; ctx.fillRect(0, 0, 15, canvas.height); ctx.fillRect(canvas.width - 15, 0, 15, canvas.height); 
         ctx.fillStyle = '#a00'; let offset = (Date.now() * currentSpeed * 0.1) % 40; for(let i = -40; i < canvas.height; i += 40) { ctx.fillRect(10, i + offset, 5, 20); ctx.fillRect(canvas.width - 15, i + offset, 5, 20); }
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.shadowBlur = 12; ctx.shadowColor = '#fff'; for (let i = 0; i < laneMarkers.length; i++) ctx.fillRect(canvas.width / 2 - 3, laneMarkers[i].y, 6, 50); ctx.shadowBlur = 0;
 
         if (!isGameOver) {
-            if (player.shield) { ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height/1.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.3)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke(); }
+            if (player.magnetTime > 0) {
+                ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(187, 0, 255, 0.1)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(187, 0, 255, 0.5)'; ctx.stroke();
+            }
+            if (player.shield) { 
+                ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height/1.5, 0, Math.PI * 2); 
+                ctx.fillStyle = 'rgba(0, 187, 255, 0.3)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke(); 
+            }
             drawCar(player.x, player.y, player.width, player.height, player.color);
         }
         for (let c of collectibles) drawCollectible(c); for (let o of obstacles) drawCar(o.x, o.y, o.width, o.height, o.color); for (let p of particles) p.draw(ctx); for (let f of floatingTexts) f.draw(ctx);
 
-        // Smooth fade at top and bottom to make spawns/despawns look clean
-        let topFade = ctx.createLinearGradient(0, 0, 0, 40);
-        topFade.addColorStop(0, '#0a0a14'); topFade.addColorStop(1, 'rgba(10, 10, 20, 0)');
-        ctx.fillStyle = topFade; ctx.fillRect(0, 0, canvas.width, 40);
-
-        let botFade = ctx.createLinearGradient(0, canvas.height - 40, 0, canvas.height);
-        botFade.addColorStop(0, 'rgba(10, 10, 20, 0)'); botFade.addColorStop(1, '#0a0a14');
-        ctx.fillStyle = botFade; ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+        let topFade = ctx.createLinearGradient(0, 0, 0, 40); topFade.addColorStop(0, '#0a0a14'); topFade.addColorStop(1, 'rgba(10, 10, 20, 0)'); ctx.fillStyle = topFade; ctx.fillRect(0, 0, canvas.width, 40);
+        let botFade = ctx.createLinearGradient(0, canvas.height - 40, 0, canvas.height); botFade.addColorStop(0, 'rgba(10, 10, 20, 0)'); botFade.addColorStop(1, '#0a0a14'); ctx.fillStyle = botFade; ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
     }
 
     function gameLoop(timestamp) {
