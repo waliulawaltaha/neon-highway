@@ -29,6 +29,7 @@
             border-radius: 20px;
             box-shadow: 0 0 50px rgba(0, 255, 255, 0.1), inset 0 0 20px #000;
             border: 2px solid #222;
+            transform-origin: center center; /* Ensures it scales outward evenly */
         }
 
         #game-container {
@@ -245,6 +246,7 @@
     const ctx = canvas.getContext('2d');
     
     // UI Elements
+    const gameWrapper = document.getElementById('game-wrapper');
     const gameContainer = document.getElementById('game-container');
     const scoreElement = document.getElementById('score');
     const highScoreElement = document.getElementById('high-score-val');
@@ -256,6 +258,28 @@
     const finalScoreElement = document.getElementById('final-score');
     const muteBtn = document.getElementById('mute-btn');
 
+    // --- RESPONSIVE SCALING FIX ---
+    function scaleGameToFit() {
+        // Base dimensions of the wrapper (400x600 canvas + padding/borders)
+        const baseWidth = 460; 
+        const baseHeight = 660;
+        
+        // Calculate the maximum scale factor that will still fit in the window
+        const scaleX = window.innerWidth / baseWidth;
+        const scaleY = window.innerHeight / baseHeight;
+        let scale = Math.min(scaleX, scaleY);
+        
+        // Don't shrink on tiny devices, let the browser handle it, but allow it to grow up to 2.2x on big Mac screens
+        scale = Math.min(Math.max(scale, 0.5), 2.2); 
+        
+        gameWrapper.style.transform = `scale(${scale})`;
+    }
+    
+    // Scale on load and when window resizes
+    window.addEventListener('resize', scaleGameToFit);
+    scaleGameToFit();
+
+    // High Score
     let savedHighScore = localStorage.getItem('neonHighScore') || 0;
     highScoreElement.innerText = savedHighScore;
 
@@ -346,7 +370,7 @@
         osc.stop(audioCtx.currentTime + 0.6);
     }
 
-    // --- INPUT CONTROLS ---
+    // --- INPUT CONTROLS (Updated for scaling) ---
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
@@ -360,8 +384,11 @@
     });
 
     function getPointerPos(e) {
+        // We calculate the pointer relative to the canvas, accounting for CSS scaling!
         const rect = canvas.getBoundingClientRect();
-        return (e.clientX || e.touches[0].clientX) - rect.left;
+        const scaleX = canvas.width / rect.width; 
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        return (clientX - rect.left) * scaleX;
     }
     
     canvas.addEventListener('mousedown', (e) => { if(isGameRunning && !isPaused) targetX = getPointerPos(e); });
@@ -404,7 +431,7 @@
             this.life = 800; this.maxLife = 800;
         }
         update(dt) {
-            this.y -= (dt / 16) * 1.5; // float up
+            this.y -= (dt / 16) * 1.5; 
             this.life -= dt;
         }
         draw(ctx) {
@@ -657,7 +684,6 @@
         for (let p of particles) p.draw(ctx);
         for (let f of floatingTexts) f.draw(ctx);
 
-        // Horizon Depth Gradient (drawn over cars to fade them in)
         let horizonGrad = ctx.createLinearGradient(0, 0, 0, 150);
         horizonGrad.addColorStop(0, '#0d0d1a');
         horizonGrad.addColorStop(1, 'rgba(13, 13, 26, 0)');
@@ -683,7 +709,7 @@
         isGameRunning = false;
         
         soundCrash();
-        gameContainer.classList.add('shake'); // Trigger CSS shake animation
+        gameContainer.classList.add('shake'); 
         
         createExplosion(player.x + player.width/2, player.y + player.height/2, '#0ff', 40, 20, 1000);
         createExplosion(player.x + player.width/2, player.y + player.height/2, '#fff', 20, 25, 800);
@@ -697,7 +723,6 @@
         }, 1200);
     }
 
-    // Initial draw
     requestAnimationFrame((timestamp) => { lastTime = timestamp; draw(); });
 
 </script>
