@@ -28,7 +28,6 @@
             overflow: hidden; cursor: crosshair;
         }
 
-        /* Screen Flashes & Shakes */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(1deg); }
@@ -44,7 +43,6 @@
             pointer-events: none; z-index: 8; opacity: 0; transition: opacity 0.1s;
         }
 
-        /* Toggleable CRT Scanline Effect */
         #crt-filter {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
@@ -56,7 +54,6 @@
 
         canvas { display: block; }
 
-        /* Sleeker HUD */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -82,7 +79,6 @@
         #shield-status { font-size: 12px; font-weight: bold; color: #f00; text-shadow: 0 0 5px #f00; transition: 0.3s; }
         #shield-status.active { color: #0bf; text-shadow: 0 0 8px #0bf; }
 
-        /* Glassmorphism Menus */
         .screen-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(5, 5, 16, 0.85); backdrop-filter: blur(8px);
@@ -114,7 +110,6 @@
         .insert-coin { animation: blink 1.2s infinite; color: #0ff; font-size: 18px; margin-top: 15px; text-shadow: 0 0 10px #0ff; font-weight: bold; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* Modernized Buttons */
         .btn-row { display: flex; gap: 15px; margin-top: 20px; }
         button.action-btn {
             padding: 15px 30px; font-size: 16px; font-family: inherit; font-weight: 700;
@@ -122,9 +117,7 @@
             border-radius: 8px; cursor: pointer; text-transform: uppercase;
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.2s ease;
         }
-        button.action-btn:hover {
-            background-color: #0ff; color: #000; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); transform: translateY(-2px);
-        }
+        button.action-btn:hover { background-color: #0ff; color: #000; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); transform: translateY(-2px); }
         
         .icon-btn {
             background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,255,0.5); color: #0ff;
@@ -240,29 +233,23 @@
     const sndBtn = document.getElementById('snd-toggle');
     const sndBtnPause = document.getElementById('snd-toggle-pause');
 
-    // --- RESPONSIVE SCALING FIX ---
     function scaleGameToFit() {
         const baseWidth = 440; const baseHeight = 640;
-        const scaleX = window.innerWidth / baseWidth;
-        const scaleY = window.innerHeight / baseHeight;
-        let scale = Math.min(scaleX, scaleY);
-        scale = Math.min(Math.max(scale, 0.5), 2.2); 
+        const scaleX = window.innerWidth / baseWidth; const scaleY = window.innerHeight / baseHeight;
+        let scale = Math.min(scaleX, scaleY); scale = Math.min(Math.max(scale, 0.5), 2.2); 
         gameWrapper.style.transform = `scale(${scale})`;
     }
-    window.addEventListener('resize', scaleGameToFit);
-    scaleGameToFit();
+    window.addEventListener('resize', scaleGameToFit); scaleGameToFit();
 
-    // --- PREFERENCES (Local Storage) ---
+    // Preferences
     let savedHighScore = localStorage.getItem('neonHighScore') || 0;
     highScoreElement.innerText = savedHighScore;
 
-    let crtEnabled = localStorage.getItem('neonCRT') !== 'false'; // Default true
-    let soundEnabled = localStorage.getItem('neonSND') !== 'false'; // Default true
+    let crtEnabled = localStorage.getItem('neonCRT') !== 'false'; 
+    let soundEnabled = localStorage.getItem('neonSND') !== 'false'; 
 
     function applyPreferences() {
-        if (!crtEnabled) gameContainer.classList.add('crt-off');
-        else gameContainer.classList.remove('crt-off');
-        
+        if (!crtEnabled) gameContainer.classList.add('crt-off'); else gameContainer.classList.remove('crt-off');
         let crtText = crtEnabled ? 'CRT: ON' : 'CRT: OFF';
         crtBtn.innerText = crtText; crtBtnPause.innerText = crtText;
         if(!crtEnabled) { crtBtn.classList.add('disabled'); crtBtnPause.classList.add('disabled'); }
@@ -275,89 +262,70 @@
     }
     applyPreferences();
 
-    function toggleCRT() {
-        crtEnabled = !crtEnabled;
-        localStorage.setItem('neonCRT', crtEnabled);
-        applyPreferences();
-    }
-    function toggleMute() {
-        soundEnabled = !soundEnabled;
-        localStorage.setItem('neonSND', soundEnabled);
-        applyPreferences();
-    }
+    function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
+    function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
 
-    // --- GAME VARIABLES ---
     let animationId; let lastTime = 0;
     let score = 0; let level = 1; let baseSpeed = 0.35; let currentSpeed = baseSpeed;
     let spawnTimer = 0; let spawnInterval = 1400; let collectibleTimer = 0;
     let isGameOver = false; let isGameRunning = false; let isPaused = false;
-    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
-    let targetX = null; 
+    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; let targetX = null; 
 
     let player = {}; let obstacles = []; let collectibles = []; let laneMarkers = [];
     let particles = []; let speedLines = []; let floatingTexts = [];
 
     const ENEMY_TYPES = [
-        { w: 40, h: 75, color: '#f0f', speedMult: 0.75 }, 
-        { w: 34, h: 80, color: '#f80', speedMult: 0.95 },    
-        { w: 50, h: 95, color: '#f00', speedMult: 0.55 }   
+        { w: 40, h: 75, color: '#f0f', speedMult: 0.75 }, { w: 34, h: 80, color: '#f80', speedMult: 0.95 }, { w: 50, h: 95, color: '#f00', speedMult: 0.55 }   
     ];
 
-    // --- SYNTH AUDIO SYSTEM ---
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx;
+    // Static Background Elements generated once
+    const skyline = [
+        {x: -40, w: 50, h: 70, c: '#0ff'}, {x: 15, w: 35, h: 110, c: '#f0f'}, 
+        {x: 55, w: 45, h: 60, c: '#0ff'}, {x: 105, w: 40, h: 130, c: '#f0f'}, 
+        {x: 150, w: 60, h: 85, c: '#0ff'}, {x: 215, w: 35, h: 50, c: '#0ff'}, 
+        {x: 255, w: 55, h: 140, c: '#f0f'}, {x: 315, w: 40, h: 90, c: '#0ff'}, 
+        {x: 360, w: 50, h: 65, c: '#f0f'}, {x: 415, w: 45, h: 100, c: '#0ff'}
+    ];
+    const stars = Array.from({length: 35}, () => ({
+        x: Math.random() * 400, y: Math.random() * 100, s: Math.random() * 2 + 1, a: Math.random() * 0.8 + 0.2
+    }));
 
-    function initAudio() {
-        if (!audioCtx) audioCtx = new AudioContext();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
+    // Audio
+    const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
     function playTone(freq, type, duration, vol) {
         if (!soundEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
-
     function soundStart() { playTone(400, 'square', 0.1, 0.1); setTimeout(() => playTone(600, 'square', 0.3, 0.1), 100); }
     function soundCollect() { playTone(880, 'sine', 0.1, 0.1); setTimeout(() => playTone(1760, 'sine', 0.2, 0.1), 80); }
     function soundShieldUp() { playTone(300, 'sine', 0.1, 0.1); setTimeout(() => playTone(400, 'sine', 0.3, 0.1), 100); }
     function soundShieldDown() { playTone(200, 'sawtooth', 0.2, 0.15); setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.15), 100); }
     function soundLevelUp() { playTone(440, 'square', 0.1, 0.1); setTimeout(() => playTone(554, 'square', 0.1, 0.1), 100); setTimeout(() => playTone(659, 'square', 0.3, 0.1), 200); }
-
     function soundCrash() {
         if (!soundEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.6);
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
     }
 
-    // --- INPUT CONTROLS ---
+    // Controls
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
     });
-    window.addEventListener('keyup', (e) => { 
-        if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = false; 
-    });
-    window.addEventListener('blur', () => { 
-        for (let key in keys) keys[key] = false; targetX = null;
-        if(isGameRunning && !isGameOver && !isPaused) togglePause();
-    });
+    window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = false; });
+    window.addEventListener('blur', () => { for (let key in keys) keys[key] = false; targetX = null; if(isGameRunning && !isGameOver && !isPaused) togglePause(); });
 
     function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; 
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        return (clientX - rect.left) * scaleX;
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX); return (clientX - rect.left) * scaleX;
     }
-    
     canvas.addEventListener('mousedown', (e) => { if(isGameRunning && !isPaused) targetX = getPointerPos(e); });
     canvas.addEventListener('mousemove', (e) => { if(isGameRunning && !isPaused && e.buttons > 0) targetX = getPointerPos(e); });
     canvas.addEventListener('mouseup', () => targetX = null); canvas.addEventListener('mouseleave', () => targetX = null);
@@ -365,7 +333,7 @@
     canvas.addEventListener('touchmove', (e) => { if(!isGameRunning || isPaused) return; e.preventDefault(); targetX = getPointerPos(e); }, { passive: false });
     canvas.addEventListener('touchend', (e) => { e.preventDefault(); targetX = null; }, { passive: false });
 
-    // --- VISUAL FX ---
+    // FX
     class Particle {
         constructor(x, y, color, speed, life, size = 3) {
             this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * speed; this.vy = (Math.random() - 0.5) * speed;
@@ -374,11 +342,9 @@
         update(dt) { this.x += this.vx * (dt/16); this.y += this.vy * (dt/16); this.life -= dt; }
         draw(ctx) { ctx.globalAlpha = Math.max(0, this.life/this.maxLife); ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0; }
     }
-
     class FloatingText {
         constructor(x, y, text, color, scale=1) {
-            this.x = x; this.y = y; this.text = text; this.color = color; this.scale = scale;
-            this.life = 1000; this.maxLife = 1000;
+            this.x = x; this.y = y; this.text = text; this.color = color; this.scale = scale; this.life = 1000; this.maxLife = 1000;
         }
         update(dt) { this.y -= (dt/16) * 1.5; this.life -= dt; }
         draw(ctx) {
@@ -388,64 +354,31 @@
             ctx.shadowBlur = 0; ctx.globalAlpha = 1.0; ctx.textAlign = 'left';
         }
     }
+    function createExplosion(x, y, color, amount=30, speed=15, life=800) { for (let i = 0; i < amount; i++) particles.push(new Particle(x, y, color, speed, life)); }
+    function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
+    function updateShieldHUD() { if(player.shield) { shieldStatus.innerText = "ONLINE"; shieldStatus.classList.add('active'); } else { shieldStatus.innerText = "OFFLINE"; shieldStatus.classList.remove('active'); } }
 
-    function createExplosion(x, y, color, amount=30, speed=15, life=800) {
-        for (let i = 0; i < amount; i++) particles.push(new Particle(x, y, color, speed, life));
-    }
-
-    function triggerScreenFlash(color) {
-        flashOverlay.style.backgroundColor = color;
-        flashOverlay.style.opacity = '1';
-        setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50);
-    }
-
-    function updateShieldHUD() {
-        if(player.shield) {
-            shieldStatus.innerText = "ONLINE"; shieldStatus.classList.add('active');
-        } else {
-            shieldStatus.innerText = "OFFLINE"; shieldStatus.classList.remove('active');
-        }
-    }
-
-    // --- CORE LOOP ---
     function togglePause() {
         if (!isGameRunning || isGameOver) return;
         isPaused = !isPaused;
-        if (isPaused) {
-            pauseScreen.style.display = 'flex'; setTimeout(() => { pauseScreen.style.opacity = '1'; }, 10);
-            cancelAnimationFrame(animationId);
-        } else {
-            pauseScreen.style.opacity = '0'; setTimeout(() => { pauseScreen.style.display = 'none'; }, 300);
-            lastTime = performance.now(); animationId = requestAnimationFrame(gameLoop);
-        }
+        if (isPaused) { pauseScreen.style.display = 'flex'; setTimeout(() => { pauseScreen.style.opacity = '1'; }, 10); cancelAnimationFrame(animationId); } 
+        else { pauseScreen.style.opacity = '0'; setTimeout(() => { pauseScreen.style.display = 'none'; }, 300); lastTime = performance.now(); animationId = requestAnimationFrame(gameLoop); }
     }
 
     function initGame() {
         if(isGameRunning) return; 
         initAudio(); soundStart();
-        
-        score = 0; level = 1; currentSpeed = baseSpeed; spawnInterval = 1400;
-        spawnTimer = 0; collectibleTimer = 0;
+        score = 0; level = 1; currentSpeed = baseSpeed; spawnInterval = 1400; spawnTimer = 0; collectibleTimer = 0;
         isGameOver = false; isGameRunning = true; isPaused = false;
-        
         obstacles = []; collectibles = []; laneMarkers = []; particles = []; speedLines = []; floatingTexts = [];
-        scoreElement.innerText = score; updateSpeedometer();
-        gameContainer.classList.remove('shake');
-        
+        scoreElement.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
         player = { x: 180, y: 480, width: 40, height: 75, vx: 0, acceleration: 1.0, friction: 0.80, maxSpeed: 9, color: '#0ff', shield: false };
-        updateShieldHUD();
-        for (let key in keys) keys[key] = false; targetX = null;
-
+        updateShieldHUD(); for (let key in keys) keys[key] = false; targetX = null;
         for (let i = 0; i < 6; i++) laneMarkers.push({ y: i * 120 });
         for (let i = 0; i < 10; i++) speedLines.push({ x: Math.random() > 0.5 ? 5 : 390, y: Math.random() * 600, len: Math.random() * 50 + 20 });
-
-        startScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
-        pauseScreen.style.display = 'none'; pauseScreen.style.opacity = '0';
-        hud.style.display = 'flex';
-
-        lastTime = performance.now();
-        cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
+        startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
+        pauseScreen.style.display = 'none'; pauseScreen.style.opacity = '0'; hud.style.display = 'flex';
+        lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
     }
 
     function detectCollision(rect1, rect2, marginX=5, marginY=8) {
@@ -463,69 +396,43 @@
             floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2 + 30, "SPEED UP!", "#0ff", 1.2));
         }
     }
-
     function updateSpeedometer() { speedDisplay.innerText = Math.floor(currentSpeed * 350); }
 
     function update(dt) {
-        if (isGameOver) {
-            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); }
-            return;
-        }
-
+        if (isGameOver) { for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); } return; }
         let timeScale = dt / 16.6;
 
-        if (targetX !== null) {
-            let diff = targetX - (player.x + player.width/2);
-            if (Math.abs(diff) > 3) player.vx += Math.sign(diff) * player.acceleration * timeScale * 1.2;
-        } else {
-            if (keys.ArrowLeft || keys.a) player.vx -= player.acceleration * timeScale;
-            if (keys.ArrowRight || keys.d) player.vx += player.acceleration * timeScale;
-        }
+        if (targetX !== null) { let diff = targetX - (player.x + player.width/2); if (Math.abs(diff) > 3) player.vx += Math.sign(diff) * player.acceleration * timeScale * 1.2; } 
+        else { if (keys.ArrowLeft || keys.a) player.vx -= player.acceleration * timeScale; if (keys.ArrowRight || keys.d) player.vx += player.acceleration * timeScale; }
 
         player.vx *= Math.pow(player.friction, timeScale);
-        if (player.vx > player.maxSpeed) player.vx = player.maxSpeed;
-        if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
+        if (player.vx > player.maxSpeed) player.vx = player.maxSpeed; if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
         player.x += player.vx * timeScale;
-        if (player.x < 15) { player.x = 15; player.vx = 0; }
-        if (player.x > canvas.width - player.width - 15) { player.x = canvas.width - player.width - 15; player.vx = 0; }
+        if (player.x < 15) { player.x = 15; player.vx = 0; } if (player.x > canvas.width - player.width - 15) { player.x = canvas.width - player.width - 15; player.vx = 0; }
 
-        if (Math.random() > 0.4) {
-            particles.push(new Particle(player.x + 8, player.y + player.height, '#0ff', 1.5, 200));
-            particles.push(new Particle(player.x + player.width - 8, player.y + player.height, '#0ff', 1.5, 200));
-        }
+        if (Math.random() > 0.4) { particles.push(new Particle(player.x + 8, player.y + player.height, '#0ff', 1.5, 200)); particles.push(new Particle(player.x + player.width - 8, player.y + player.height, '#0ff', 1.5, 200)); }
 
         let moveDist = currentSpeed * dt;
         for (let i = 0; i < laneMarkers.length; i++) { laneMarkers[i].y += moveDist; if (laneMarkers[i].y > canvas.height) laneMarkers[i].y -= 720; }
-        for (let i = 0; i < speedLines.length; i++) {
-            speedLines[i].y += moveDist * 2.5;
-            if (speedLines[i].y > canvas.height) { speedLines[i].y = -100; speedLines[i].x = Math.random() > 0.5 ? Math.random()*10 : canvas.width - Math.random()*10; }
-        }
+        for (let i = 0; i < speedLines.length; i++) { speedLines[i].y += moveDist * 2.5; if (speedLines[i].y > canvas.height) { speedLines[i].y = -100; speedLines[i].x = Math.random() > 0.5 ? Math.random()*10 : canvas.width - Math.random()*10; } }
 
         spawnTimer += dt;
         if (spawnTimer > spawnInterval) {
-            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
-            let x = Math.random() * (canvas.width - type.w - 40) + 20;
-            obstacles.push({ x: x, y: -type.h, width: type.w, height: type.h, color: type.color, speedMult: type.speedMult });
-            spawnTimer = 0;
+            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; let x = Math.random() * (canvas.width - type.w - 40) + 20;
+            obstacles.push({ x: x, y: -type.h, width: type.w, height: type.h, color: type.color, speedMult: type.speedMult }); spawnTimer = 0;
         }
 
         collectibleTimer += dt;
         if (collectibleTimer > 2500) {
-            if(Math.random() > 0.4) {
-                let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20;
-                let type = Math.random() > 0.80 ? 'shield' : 'gold';
-                collectibles.push({x: x, y: -s, width: s, height: s, type: type});
-            }
+            if(Math.random() > 0.4) { let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20; let type = Math.random() > 0.80 ? 'shield' : 'gold'; collectibles.push({x: x, y: -s, width: s, height: s, type: type}); }
             collectibleTimer = 0;
         }
 
         for (let i = 0; i < obstacles.length; i++) {
             obstacles[i].y += moveDist * obstacles[i].speedMult; 
-
             if (detectCollision(player, obstacles[i])) {
                 if (player.shield) {
-                    player.shield = false; updateShieldHUD(); soundShieldDown();
-                    triggerScreenFlash('rgba(0, 187, 255, 0.4)');
+                    player.shield = false; updateShieldHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
                     createExplosion(obstacles[i].x + 20, obstacles[i].y + 35, obstacles[i].color, 30, 15, 600);
                     floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "DEFLECTED!", "#0bf"));
                     obstacles.splice(i, 1); i--; continue;
@@ -536,16 +443,12 @@
 
         for (let i = 0; i < collectibles.length; i++) {
             collectibles[i].y += moveDist; 
-            let hoverY = collectibles[i].y + Math.sin(Date.now() / 150) * 3;
-            let cBox = {x: collectibles[i].x, y: hoverY, width: collectibles[i].width, height: collectibles[i].height};
-            
+            let hoverY = collectibles[i].y + Math.sin(Date.now() / 150) * 3; let cBox = {x: collectibles[i].x, y: hoverY, width: collectibles[i].width, height: collectibles[i].height};
             if (detectCollision(player, cBox, 0, 0)) {
                 if (collectibles[i].type === 'gold') {
-                    soundCollect(); createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400);
-                    floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "+50", "#ff0")); addScore(50); 
+                    soundCollect(); createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "+50", "#ff0")); addScore(50); 
                 } else if (collectibles[i].type === 'shield') {
-                    soundShieldUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#0bf', 20, 10, 500);
-                    floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "SHIELD UP", "#0bf"));
+                    soundShieldUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#0bf', 20, 10, 500); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "SHIELD UP", "#0bf"));
                     player.shield = true; updateShieldHUD(); addScore(10);
                 }
                 collectibles.splice(i, 1); i--; continue;
@@ -560,113 +463,72 @@
     function drawCar(x, y, w, h, color) {
         ctx.shadowBlur = 15; ctx.shadowColor = color; ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
         ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.strokeRect(x, y, w, h); ctx.shadowBlur = 0; 
-        ctx.fillStyle = color === '#0ff' ? '#fff' : '#ff0'; 
-        ctx.fillRect(x + 5, y + (color === '#0ff' ? 0 : h - 10), 8, 10);
-        ctx.fillRect(x + w - 13, y + (color === '#0ff' ? 0 : h - 10), 8, 10);
+        ctx.fillStyle = color === '#0ff' ? '#fff' : '#ff0'; ctx.fillRect(x + 5, y + (color === '#0ff' ? 0 : h - 10), 8, 10); ctx.fillRect(x + w - 13, y + (color === '#0ff' ? 0 : h - 10), 8, 10);
         ctx.fillStyle = '#0a0a1a'; ctx.fillRect(x + 5, y + 20, w - 10, h * 0.25); ctx.fillRect(x + 5, y + h - 20, w - 10, 10);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(x + 5, y + 20, w - 10, 5);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x + 10, y + 20 + (h*0.25), w - 20, h*0.3);
+        ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(x + 5, y + 20, w - 10, 5); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x + 10, y + 20 + (h*0.25), w - 20, h*0.3);
     }
 
     function drawCollectible(c) {
-        ctx.save();
-        let hoverY = c.y + Math.sin(Date.now() / 150) * 3; ctx.translate(c.x + c.width/2, hoverY + c.height/2);
+        ctx.save(); let hoverY = c.y + Math.sin(Date.now() / 150) * 3; ctx.translate(c.x + c.width/2, hoverY + c.height/2);
         if (c.type === 'gold') {
-            ctx.rotate(Date.now() / 500); ctx.shadowBlur = 15; ctx.shadowColor = '#ff0';
-            ctx.fillStyle = '#ff0'; ctx.fillRect(-c.width/2, -c.height/2, c.width, c.height);
-            ctx.fillStyle = '#fff'; ctx.fillRect(-c.width/4, -c.height/4, c.width/2, c.height/2);
+            ctx.rotate(Date.now() / 500); ctx.shadowBlur = 15; ctx.shadowColor = '#ff0'; ctx.fillStyle = '#ff0'; ctx.fillRect(-c.width/2, -c.height/2, c.width, c.height); ctx.fillStyle = '#fff'; ctx.fillRect(-c.width/4, -c.height/4, c.width/2, c.height/2);
         } else if (c.type === 'shield') {
             let pulse = Math.abs(Math.sin(Date.now() / 200)) * 5; ctx.shadowBlur = 20; ctx.shadowColor = '#0bf';
-            ctx.beginPath(); ctx.arc(0, 0, (c.width/2) + pulse, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, (c.width/2) + pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
         }
         ctx.restore();
     }
 
     function drawHorizonSky() {
         ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, 150);
+        for(let s of stars) { ctx.fillStyle = `rgba(255, 255, 255, ${s.a})`; ctx.fillRect(s.x, s.y, s.s, s.s); }
         
-        // Parallax Mountains
-        let pOffset = (player.x - (canvas.width/2)) * -0.15; // Shift opposite to player
-        ctx.fillStyle = '#1a0a2a'; ctx.strokeStyle = '#f0f'; ctx.lineWidth = 1; ctx.shadowBlur = 5; ctx.shadowColor = '#f0f';
-        ctx.beginPath(); ctx.moveTo(0 + pOffset - 50, 150);
-        ctx.lineTo(80 + pOffset, 70); ctx.lineTo(150 + pOffset, 120); ctx.lineTo(250 + pOffset, 50);
-        ctx.lineTo(350 + pOffset, 130); ctx.lineTo(450 + pOffset, 80); ctx.lineTo(550 + pOffset, 150);
-        ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+        let sunGrad = ctx.createLinearGradient(0, 50, 0, 150); sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
+        ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = '#f0f'; ctx.fillStyle = sunGrad; ctx.beginPath(); ctx.arc(canvas.width / 2, 150, 60, Math.PI, 0); ctx.fill(); ctx.restore();
+        ctx.fillStyle = '#050510'; for(let i=0; i<6; i++) { ctx.fillRect(canvas.width/2 - 70, 140 - (i*12), 140, i+1); }
 
-        let sunGrad = ctx.createLinearGradient(0, 50, 0, 150);
-        sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
-        ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = '#f0f'; ctx.fillStyle = sunGrad;
-        ctx.beginPath(); ctx.arc(canvas.width / 2, 150, 60, Math.PI, 0); ctx.fill(); ctx.restore();
-
-        ctx.fillStyle = '#050510';
-        for(let i=0; i<6; i++) { ctx.fillRect(canvas.width/2 - 70, 140 - (i*12), 140, i+1); }
+        let pOffset = (player.x - (canvas.width/2)) * -0.06; 
+        ctx.fillStyle = '#050510'; ctx.lineWidth = 1.5;
+        for(let b of skyline) {
+            ctx.strokeStyle = b.c; ctx.shadowBlur = 8; ctx.shadowColor = b.c;
+            ctx.fillRect(b.x + pOffset, 150 - b.h, b.w, b.h); ctx.strokeRect(b.x + pOffset, 150 - b.h, b.w, b.h);
+            if (b.h > 100) { ctx.beginPath(); ctx.moveTo(b.x + pOffset + b.w/2, 150 - b.h); ctx.lineTo(b.x + pOffset + b.w/2, 150 - b.h - 20); ctx.stroke(); }
+        }
+        ctx.shadowBlur = 0;
     }
 
     function draw() {
         ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawHorizonSky();
-
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
-        for(let line of speedLines) ctx.fillRect(line.x, line.y, 2, line.len);
-
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)'; for(let line of speedLines) ctx.fillRect(line.x, line.y, 2, line.len);
         ctx.fillStyle = '#111'; ctx.fillRect(0, 0, 15, canvas.height); ctx.fillRect(canvas.width - 15, 0, 15, canvas.height); 
-        ctx.fillStyle = '#a00'; 
-        let offset = (Date.now() * currentSpeed * 0.1) % 40;
-        for(let i = -40; i < canvas.height; i += 40) { ctx.fillRect(10, i + offset, 5, 20); ctx.fillRect(canvas.width - 15, i + offset, 5, 20); }
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.shadowBlur = 12; ctx.shadowColor = '#fff';
-        for (let i = 0; i < laneMarkers.length; i++) ctx.fillRect(canvas.width / 2 - 3, laneMarkers[i].y, 6, 50);
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#a00'; let offset = (Date.now() * currentSpeed * 0.1) % 40; for(let i = -40; i < canvas.height; i += 40) { ctx.fillRect(10, i + offset, 5, 20); ctx.fillRect(canvas.width - 15, i + offset, 5, 20); }
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.shadowBlur = 12; ctx.shadowColor = '#fff'; for (let i = 0; i < laneMarkers.length; i++) ctx.fillRect(canvas.width / 2 - 3, laneMarkers[i].y, 6, 50); ctx.shadowBlur = 0;
 
         if (!isGameOver) {
-            if (player.shield) {
-                ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height/1.5, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0, 187, 255, 0.3)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke();
-            }
+            if (player.shield) { ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height/1.5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.3)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke(); }
             drawCar(player.x, player.y, player.width, player.height, player.color);
         }
-        
-        for (let c of collectibles) drawCollectible(c);
-        for (let o of obstacles) drawCar(o.x, o.y, o.width, o.height, o.color);
-        for (let p of particles) p.draw(ctx);
-        for (let f of floatingTexts) f.draw(ctx);
+        for (let c of collectibles) drawCollectible(c); for (let o of obstacles) drawCar(o.x, o.y, o.width, o.height, o.color); for (let p of particles) p.draw(ctx); for (let f of floatingTexts) f.draw(ctx);
 
-        let horizonGrad = ctx.createLinearGradient(0, 140, 0, 220);
-        horizonGrad.addColorStop(0, '#050510'); horizonGrad.addColorStop(1, 'rgba(5, 5, 16, 0)');
-        ctx.fillStyle = horizonGrad; ctx.fillRect(0, 140, canvas.width, 80);
-        ctx.fillStyle = '#0ff'; ctx.shadowBlur=10; ctx.shadowColor='#0ff'; ctx.fillRect(0, 149, canvas.width, 2); ctx.shadowBlur=0;
+        let horizonGrad = ctx.createLinearGradient(0, 140, 0, 220); horizonGrad.addColorStop(0, '#050510'); horizonGrad.addColorStop(1, 'rgba(5, 5, 16, 0)');
+        ctx.fillStyle = horizonGrad; ctx.fillRect(0, 140, canvas.width, 80); ctx.fillStyle = '#0ff'; ctx.shadowBlur=10; ctx.shadowColor='#0ff'; ctx.fillRect(0, 149, canvas.width, 2); ctx.shadowBlur=0;
     }
 
     function gameLoop(timestamp) {
-        if (isPaused) return; 
-        if (!isGameRunning) { draw(); return; }
+        if (isPaused) return; if (!isGameRunning) { draw(); return; }
         let dt = timestamp - lastTime; lastTime = timestamp; if (dt > 100) dt = 16.6; 
         update(dt); draw(); animationId = requestAnimationFrame(gameLoop);
     }
 
     function endGame() {
-        isGameOver = true; isGameRunning = false;
-        
-        soundCrash();
-        triggerScreenFlash('rgba(255, 0, 0, 0.6)');
-        gameContainer.classList.add('shake'); 
-        
-        createExplosion(player.x + player.width/2, player.y + player.height/2, '#0ff', 40, 20, 1000);
-        createExplosion(player.x + player.width/2, player.y + player.height/2, '#fff', 20, 25, 800);
-
-        finalScoreElement.innerText = score;
-        hud.style.display = 'none';
-        
-        setTimeout(() => {
-            gameOverScreen.style.display = 'flex';
-            setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50);
-        }, 1200);
+        isGameOver = true; isGameRunning = false; soundCrash(); triggerScreenFlash('rgba(255, 0, 0, 0.6)'); gameContainer.classList.add('shake'); 
+        createExplosion(player.x + player.width/2, player.y + player.height/2, '#0ff', 40, 20, 1000); createExplosion(player.x + player.width/2, player.y + player.height/2, '#fff', 20, 25, 800);
+        finalScoreElement.innerText = score; hud.style.display = 'none';
+        setTimeout(() => { gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50); }, 1200);
     }
 
     requestAnimationFrame((timestamp) => { lastTime = timestamp; draw(); });
-
 </script>
 </body>
 </html>
