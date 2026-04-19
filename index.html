@@ -54,7 +54,6 @@
 
         canvas { display: block; }
 
-        /* HUD Improvements */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -113,10 +112,11 @@
         .highlight-blue { color: #0bf; font-weight: bold; text-shadow: 0 0 5px #0bf; }
         .highlight-purple { color: #b0f; font-weight: bold; text-shadow: 0 0 5px #b0f; }
 
-        .insert-coin { animation: blink 1.2s infinite; color: #0ff; font-size: 16px; margin-top: 10px; text-shadow: 0 0 10px #0ff; font-weight: bold; }
+        .insert-coin { animation: blink 1.2s infinite; color: #0ff; font-size: 16px; margin-top: 10px; text-shadow: 0 0 10px #0ff; font-weight: bold; cursor: pointer;}
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        .btn-row { display: flex; gap: 15px; margin-top: 15px; }
+        .btn-row { display: flex; gap: 15px; margin-top: 15px; justify-content: center; align-items: center;}
+        
         button.action-btn {
             padding: 12px 25px; font-size: 16px; font-family: inherit; font-weight: 700;
             background: rgba(0, 255, 255, 0.05); color: #0ff; border: 2px solid #0ff;
@@ -133,14 +133,37 @@
         .icon-btn:hover { background: #0ff; color: #000; }
         .icon-btn.disabled { color: #888; border-color: #555; text-shadow: none; }
 
-        /* Share Buttons Section */
+        /* --- Social Share Area --- */
         .share-section {
-            margin-top: 20px; padding-top: 15px;
-            border-top: 1px solid rgba(0, 255, 255, 0.2); width: 80%;
+            margin-top: 15px; padding-top: 15px; width: 90%;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
         }
-        .share-btn { font-size: 16px; padding: 8px 12px; }
+        .share-title { font-size: 12px; color: #aaa; letter-spacing: 2px; margin-bottom: 10px; }
         
-        .controls-hint { font-size: 11px; color: #aaa; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .social-btn {
+            display: flex; justify-content: center; align-items: center;
+            width: 40px; height: 40px; border-radius: 8px; background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,255,255,0.3); color: #fff; cursor: pointer;
+            transition: 0.3s; pointer-events: auto;
+        }
+        .social-btn svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        /* Brand Colors on Hover */
+        .social-btn.native:hover { background: #0ff; color: #000; box-shadow: 0 0 15px #0ff; border-color: #0ff; }
+        .social-btn.x:hover { background: #fff; color: #000; box-shadow: 0 0 15px #fff; border-color: #fff; }
+        .social-btn.wa:hover { background: #25D366; box-shadow: 0 0 15px #25D366; border-color: #25D366; }
+        .social-btn.fb:hover { background: #1877F2; box-shadow: 0 0 15px #1877F2; border-color: #1877F2; }
+        .social-btn.th:hover { background: #fff; color: #000; box-shadow: 0 0 15px #fff; border-color: #fff; }
+        .social-btn.ig:hover { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); box-shadow: 0 0 15px #dc2743; border-color: transparent; }
+        
+        #toast {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #0ff; color: #000; padding: 10px 20px; border-radius: 5px;
+            font-weight: bold; font-size: 14px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 20;
+            box-shadow: 0 0 20px rgba(0,255,255,0.6);
+        }
+
+        .controls-hint { font-size: 11px; color: #aaa; margin-top: 15px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
         
         #credits { text-align: center; padding: 10px; font-size: 11px; letter-spacing: 1px; background: rgba(0, 0, 0, 0.85); pointer-events: auto; border-top: 1px solid rgba(0,255,255,0.3); }
         #credits a { color: #f0f; text-decoration: none; font-weight: bold; transition: 0.3s; }
@@ -154,6 +177,7 @@
         <div id="crt-filter"></div>
         <div id="screen-flash"></div>
         <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="toast">Copied to Clipboard!</div>
         
         <div id="ui-layer">
             <div id="hud">
@@ -192,7 +216,7 @@
             <div class="grid-bg"></div>
             <h1 class="neon-text-blue">NEON HIGHWAY</h1>
             <div class="stats">
-                <p>Collect <span class="highlight-gold">Gold</span> to build Combo Multipliers!</p>
+                <p>Collect <span class="highlight-gold">Gold</span> to build Multipliers!</p>
                 <p>Grab <span class="highlight-blue">Shields</span> to deflect one crash.</p>
                 <p>Grab <span class="highlight-purple">Magnets</span> to auto-collect gold.</p>
             </div>
@@ -219,19 +243,39 @@
 
         <div id="game-over" class="screen-overlay">
             <h1 class="neon-text-red">SYSTEM FAILURE</h1>
-            <p style="margin-top:10px;">Final Score</p>
+            <p style="margin-top:5px; margin-bottom: 0;">Final Score</p>
             <p><span id="final-score" style="color:#0ff; font-weight:900; font-size: 36px; text-shadow: 0 0 15px #0ff;">0</span></p>
             
             <div class="share-section">
-                <p style="font-size: 11px; color: #aaa; margin-bottom: 5px;">SHARE YOUR SCORE</p>
-                <div class="btn-row" style="justify-content: center; margin-top: 5px;">
-                    <button class="icon-btn share-btn" onclick="shareScore('x')" title="Share on X">𝕏</button>
-                    <button class="icon-btn share-btn" onclick="shareScore('wa')" title="Share on WhatsApp">💬</button>
-                    <button class="icon-btn share-btn" onclick="shareScore('copy')" title="Copy Link">📋 COPY</button>
+                <div class="share-title">BROADCAST YOUR RUN</div>
+                
+                <button class="action-btn" onclick="shareScore('native')" style="padding: 10px 20px; font-size: 14px; margin-top: 0;">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        SHARE SCORE
+                    </span>
+                </button>
+
+                <div class="btn-row">
+                    <button class="social-btn wa" onclick="shareScore('wa')" title="WhatsApp">
+                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                    </button>
+                    <button class="social-btn x" onclick="shareScore('x')" title="X (Twitter)">
+                        <svg viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>
+                    </button>
+                    <button class="social-btn fb" onclick="shareScore('fb')" title="Facebook">
+                        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </button>
+                    <button class="social-btn th" onclick="shareScore('threads')" title="Threads">
+                        <svg viewBox="0 0 24 24"><path d="M16.793 11.132A4.773 4.773 0 0 0 16 8.5c-1.045-1.5-2.613-2.25-4.5-2.25-1.5 0-2.887.5-3.863 1.368-1.125.938-1.875 2.5-1.875 4.382 0 2 .75 3.375 1.875 4.313.975.862 2.363 1.362 3.863 1.362 1.888 0 3.037-.938 3.525-2.137h2.25c-.563 2.25-2.438 3.938-5.775 3.938-2.363 0-4.388-.863-5.775-2.25-1.5-1.5-2.25-3.5-2.25-5.25 0-1.875.75-3.862 2.25-5.362 1.388-1.388 3.413-2.25 5.775-2.25 3.038 0 5.363 1.125 6.863 3.375 1.125 1.688 1.688 3.938 1.688 6.563v1.5h-8.813c.188 1.125.938 1.688 2.063 1.688 1.125 0 1.875-.563 2.063-1.688h2.062c-.187 2.063-1.5 3.188-4.125 3.188-2.625 0-4.125-1.5-4.125-3.563 0-2.062 1.5-3.562 4.125-3.562 1.313 0 2.438.375 3.188 1.125.563.562.938 1.312 1.125 2.062h-4.313c-.187-.937-.75-1.5-1.687-1.5-.938 0-1.5.563-1.688 1.5h6.188Z"/></svg>
+                    </button>
+                    <button class="social-btn ig" onclick="shareScore('copy')" title="Copy for Instagram/Messenger">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
                 </div>
             </div>
 
-            <button class="action-btn" onclick="initGame()" style="margin-top: 20px;">REBOOT [ENTER]</button>
+            <button class="action-btn" onclick="initGame()" style="margin-top: 20px; font-size: 14px; padding: 10px 20px; border-color: rgba(0,255,255,0.5);">REBOOT [ENTER]</button>
         </div>
     </div>
 </div>
@@ -256,6 +300,7 @@
     const gameOverScreen = document.getElementById('game-over');
     const pauseScreen = document.getElementById('pause-screen');
     const finalScoreElement = document.getElementById('final-score');
+    const toast = document.getElementById('toast');
     
     const crtBtn = document.getElementById('crt-toggle');
     const crtBtnPause = document.getElementById('crt-toggle-pause');
@@ -292,23 +337,37 @@
     function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
     function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
 
-    // Sharing System
+    // --- SHARING SYSTEM ---
+    function showToast(msg) {
+        toast.innerText = msg; toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
     function shareScore(platform) {
-        // Use your actual website URL if playing locally, otherwise uses current URL
+        // Fallback to website if testing locally
         let url = window.location.href; 
-        if (url.includes('file://')) url = 'http://www.waliulawaltaha.com'; 
+        if (url.includes('file://') || url.includes('127.0.0.1')) url = 'http://www.waliulawaltaha.com'; 
         
         const text = `I just survived the Neon Highway and scored ${score}! 🏎️✨ Can you beat my high score?`;
-        
-        if (platform === 'x') {
+
+        if (platform === 'native' && navigator.share) {
+            // Uses the phone's native share menu (great for IG, Messenger, Messages)
+            navigator.share({ title: 'Neon Highway', text: text, url: url })
+                .catch(err => console.log('Share canceled', err));
+        } else if (platform === 'x') {
             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
         } else if (platform === 'wa') {
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`, '_blank');
-        } else if (platform === 'copy') {
+        } else if (platform === 'fb') {
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        } else if (platform === 'threads') {
+            window.open(`https://threads.net/intent/post?text=${encodeURIComponent(text + " " + url)}`, '_blank');
+        } else {
+            // Copy to clipboard (Fallback for Instagram/Messenger on desktop, or native share failure)
             navigator.clipboard.writeText(`${text} Play here: ${url}`).then(() => {
-                alert("Score and link copied to clipboard!");
-            }).catch(err => {
-                alert("Failed to copy text. Please try again.");
+                showToast("Copied! Paste in IG, Messenger, etc.");
+            }).catch(() => {
+                showToast("Failed to copy. Try again.");
             });
         }
     }
