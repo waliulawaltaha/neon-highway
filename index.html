@@ -54,7 +54,6 @@
 
         canvas { display: block; }
 
-        /* HUD Improvements */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -300,13 +299,12 @@
     // --- 3D ENGINE MATH ---
     const FOCAL_LENGTH = 300;
     const CAMERA_Y = 120;
-    const HORIZON_Y = 150; // Y coordinate where road meets sky
+    const HORIZON_Y = 150; 
     const RENDER_DISTANCE = 2500;
 
-    // Project 3D world coordinates (X, Y, Z) to 2D canvas coordinates (x, y)
     function project3D(wX, wY, wZ, camX, camZ) {
         let dz = wZ - camZ;
-        if (dz <= 10) return null; // Behind camera
+        if (dz <= 10) return null; 
         let scale = FOCAL_LENGTH / dz;
         let px = (canvas.width / 2) + ((wX - camX) * scale);
         let py = HORIZON_Y + ((CAMERA_Y - wY) * scale);
@@ -316,20 +314,15 @@
     // --- GAME VARIABLES ---
     let animationId; let lastTime = 0;
     let score = 0; let level = 1; let combo = 0; let multiplier = 1;
-    
-    // Z-axis movement
-    let cameraZ = 0; 
-    let baseSpeed = 1500; // Units per second
-    let currentSpeed = baseSpeed;
+    let cameraZ = 0; let cameraX = 0;
+    let baseSpeed = 1500; let currentSpeed = baseSpeed;
     let spawnTimer = 0; let collectibleTimer = 0;
     let isGameOver = false; let isGameRunning = false; let isPaused = false;
-    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; 
-    let targetX = null; 
+    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; let targetX = null; 
 
-    // World Entities
-    let player = {}; 
-    let entities = []; // Combines obstacles, collectibles, particles for Z-sorting
-    let floatingTexts = [];
+    // ALL properties initialized instantly to prevent NaN on first render
+    let player = { x: 0, y: 0, zOffset: 300, width: 80, height: 40, depth: 140, vx: 0, acceleration: 1.5, friction: 0.82, maxSpeed: 25, color: '#0ff', shield: false, magnetTime: 0 };
+    let entities = []; let floatingTexts = [];
 
     const ENEMY_TYPES = [
         { w: 80, h: 45, d: 150, color: '#f0f', speedMult: 0.6 }, 
@@ -337,7 +330,7 @@
         { w: 100, h: 60, d: 180, color: '#f00', speedMult: 0.4 }   
     ];
 
-    // Audio Synth (Kept from previous version)
+    // Audio
     const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
     function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
     function playTone(freq, type, duration, vol) {
@@ -362,7 +355,7 @@
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
     }
 
-    // Controls Handling
+    // Controls
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
@@ -374,7 +367,6 @@
     function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; 
         const clientX = e.clientX || (e.touches && e.touches[0].clientX); 
-        // Map pointer from screen space to world X space roughly
         return ((clientX - rect.left) * scaleX - (canvas.width/2)) * 2.5; 
     }
     
@@ -385,41 +377,37 @@
     canvas.addEventListener('touchmove', (e) => { if(!isGameRunning || isPaused) return; e.preventDefault(); targetX = getPointerPos(e); }, { passive: false });
     canvas.addEventListener('touchend', (e) => { e.preventDefault(); targetX = null; }, { passive: false });
 
-    // 3D Particle
+    // 3D Particles
     class Particle3D {
         constructor(x, y, z, color, speed, life) {
             this.x = x; this.y = y; this.z = z;
             this.vx = (Math.random() - 0.5) * speed; this.vy = Math.random() * speed * 0.5; this.vz = (Math.random() - 0.5) * speed;
-            this.color = color; this.life = life; this.maxLife = life; this.type = 'particle';
+            this.color = color; this.life = life; this.maxLife = life; this.type = 'particle'; this.size = Math.random()*3+1;
         }
         update(dt) { this.x += this.vx * (dt/16); this.y += this.vy * (dt/16); this.z += this.vz * (dt/16); this.life -= dt; }
     }
-    
-    // 3D Text
     class FloatingText3D {
         constructor(x, y, z, text, color, scale=1) {
             this.x = x; this.y = y; this.z = z; this.text = text; this.color = color; this.scale = scale; 
             this.life = 1000; this.maxLife = 1000; this.type = 'text';
         }
-        update(dt) { this.y += (dt/16) * 2; this.life -= dt; } // Float UP in 3D world
+        update(dt) { this.y += (dt/16) * 2; this.life -= dt; }
     }
 
     function createExplosion3D(x, y, z, color, amount=30, speed=20, life=800) { 
         for (let i = 0; i < amount; i++) entities.push(new Particle3D(x, y, z, color, speed, life)); 
     }
-    
     function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
     
     function updateHUD() { 
         if(player.shield) { shieldStatus.innerText = "ONLINE"; shieldStatus.classList.add('active'); } else { shieldStatus.innerText = "OFFLINE"; shieldStatus.classList.remove('active'); }
-        comboStatus.innerText = `x${multiplier}`;
-        if(multiplier > 1) comboStatus.classList.add('active'); else comboStatus.classList.remove('active');
+        comboStatus.innerText = `x${multiplier}`; if(multiplier > 1) comboStatus.classList.add('active'); else comboStatus.classList.remove('active');
     }
 
     function breakCombo() {
         if(combo > 0) {
             combo = 0; multiplier = 1; updateHUD(); soundComboDrop();
-            entities.push(new FloatingText3D(player.x, player.y + 40, player.z, "COMBO BROKEN", "#f00", 0.8));
+            entities.push(new FloatingText3D(player.x, player.y + 40, cameraZ + player.zOffset, "COMBO BROKEN", "#f00", 0.8));
         }
     }
 
@@ -433,35 +421,30 @@
     function initGame() {
         if(isGameRunning) return; 
         initAudio(); soundStart();
-        score = 0; level = 1; combo = 0; multiplier = 1; currentSpeed = baseSpeed; cameraZ = 0;
+        score = 0; level = 1; combo = 0; multiplier = 1; currentSpeed = baseSpeed; cameraZ = 0; cameraX = 0;
         spawnTimer = 0; collectibleTimer = 0; 
         isGameOver = false; isGameRunning = true; isPaused = false;
         
         entities = []; floatingTexts = [];
         scoreElement.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
-        
-        // Player is fixed on Z axis relative to camera
         player = { x: 0, y: 0, zOffset: 300, width: 80, height: 40, depth: 140, vx: 0, acceleration: 1.5, friction: 0.82, maxSpeed: 25, color: '#0ff', shield: false, magnetTime: 0 };
-        updateHUD(); for (let key in keys) keys[key] = false; targetX = null;
-        magnetBarContainer.style.display = 'none';
         
+        updateHUD(); for (let key in keys) keys[key] = false; targetX = null; magnetBarContainer.style.display = 'none';
         startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
         pauseScreen.style.display = 'none'; pauseScreen.style.opacity = '0'; hud.style.display = 'flex';
         lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
     }
 
-    // 3D AABB Collision
     function detectCollision3D(p, obj) {
         let pZ = cameraZ + p.zOffset;
-        return ( Math.abs(p.x - obj.x) < (p.width/2 + obj.w/2 - 10) && 
-                 Math.abs(pZ - obj.z) < (p.depth/2 + obj.d/2 - 20) ); // Margin forgiving
+        return ( Math.abs(p.x - obj.x) < (p.width/2 + obj.w/2 - 10) && Math.abs(pZ - obj.z) < (p.depth/2 + obj.d/2 - 20) ); 
     }
 
     function addScore(points) {
         score += points; scoreElement.innerText = score;
         if (score > savedHighScore) { savedHighScore = score; highScoreElement.innerText = savedHighScore; localStorage.setItem('neonHighScore3D', savedHighScore); }
         if (score >= level * 200) {
-            level++; currentSpeed += 100; // Increase speed
+            level++; currentSpeed += 100; 
             updateSpeedometer(); soundLevelUp();
             entities.push(new FloatingText3D(player.x, 50, cameraZ + 500, `LEVEL ${level}`, "#f0f", 2));
         }
@@ -470,16 +453,13 @@
 
     function update(dt) {
         if (isGameOver) { 
-            // Update particles only
             for (let i = entities.length - 1; i >= 0; i--) { 
-                let e = entities[i];
-                if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
+                let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
             } return; 
         }
         
         let timeScale = dt / 16.6;
 
-        // Player X Movement
         if (targetX !== null) { 
             let diff = targetX - player.x; 
             if (Math.abs(diff) > 5) player.vx += Math.sign(diff) * player.acceleration * timeScale * 1.5; 
@@ -492,32 +472,23 @@
         if (player.vx > player.maxSpeed) player.vx = player.maxSpeed; if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
         player.x += player.vx * timeScale;
         
-        // Road bounds
-        if (player.x < -600) { player.x = -600; player.vx = 0; } 
-        if (player.x > 600) { player.x = 600; player.vx = 0; }
+        if (player.x < -600) { player.x = -600; player.vx = 0; } if (player.x > 600) { player.x = 600; player.vx = 0; }
 
-        // Advance Camera
-        cameraZ += currentSpeed * (dt/1000);
-        let playerZ = cameraZ + player.zOffset;
+        cameraZ += currentSpeed * (dt/1000); let playerZ = cameraZ + player.zOffset;
 
-        // Exhaust Particles
         if (Math.random() > 0.4) { 
             entities.push(new Particle3D(player.x - 20, 10, playerZ - 70, '#0ff', 5, 200)); 
             entities.push(new Particle3D(player.x + 20, 10, playerZ - 70, '#0ff', 5, 200)); 
         }
 
-        // Magnet HUD
         if (player.magnetTime > 0) {
-            player.magnetTime -= dt;
-            magnetBar.style.width = `${(player.magnetTime / 10000) * 100}%`;
+            player.magnetTime -= dt; magnetBar.style.width = `${(player.magnetTime / 10000) * 100}%`;
             if (player.magnetTime <= 0) magnetBarContainer.style.display = 'none';
         }
 
-        // Spawners
         spawnTimer += dt;
         if (spawnTimer > Math.max(500, 1500 - (level*50))) {
-            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; 
-            let x = (Math.random() * 1200) - 600; 
+            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; let x = (Math.random() * 1200) - 600; 
             entities.push({ type: 'enemy', x: x, y: 0, z: cameraZ + RENDER_DISTANCE, w: type.w, h: type.h, d: type.d, color: type.color, speed: currentSpeed * type.speedMult }); 
             spawnTimer = 0;
         }
@@ -525,20 +496,18 @@
         collectibleTimer += dt;
         if (collectibleTimer > 1500) {
             if(Math.random() > 0.4) { 
-                let x = (Math.random() * 1200) - 600; 
-                let rand = Math.random(); let cType = 'gold';
+                let x = (Math.random() * 1200) - 600; let rand = Math.random(); let cType = 'gold';
                 if(rand > 0.92) cType = 'shield'; else if(rand > 0.84) cType = 'magnet';
                 entities.push({ type: cType, x: x, y: 30, z: cameraZ + RENDER_DISTANCE, w: 40, h: 40, d: 40 }); 
             }
             collectibleTimer = 0;
         }
 
-        // Process Entities
         for (let i = 0; i < entities.length; i++) {
             let e = entities[i];
             
             if (e.type === 'enemy') {
-                e.z += e.speed * (dt/1000); // Enemies drive forward too
+                e.z += e.speed * (dt/1000); 
                 if (detectCollision3D(player, e)) {
                     if (player.shield) {
                         player.shield = false; updateHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
@@ -550,7 +519,6 @@
                 if (e.z < cameraZ - 200) { entities.splice(i, 1); i--; addScore(10); }
             } 
             else if (e.type === 'gold' || e.type === 'shield' || e.type === 'magnet') {
-                // Magnet pull
                 if (e.type === 'gold' && player.magnetTime > 0) {
                     let dx = player.x - e.x; let dz = playerZ - e.z; let dist = Math.sqrt(dx*dx + dz*dz);
                     if (dist < 800) { e.x += (dx / dist) * 30 * timeScale; e.z += (dz / dist) * 30 * timeScale; }
@@ -582,40 +550,27 @@
         }
     }
 
-    // --- RENDERING PIPELINE ---
-    
-    // Draws a classic pseudo-3D billboard box
+    // --- 3D RENDERING ---
     function draw3DBox(x, y, z, w, h, color, isPlayer=false) {
-        let p = project3D(x, y, z, cameraX, cameraZ);
-        if(!p) return;
-
-        let sc = p.scale;
-        let drawW = w * sc; let drawH = h * sc;
+        let p = project3D(x, y, z, cameraX, cameraZ); if(!p) return;
+        let sc = p.scale; let drawW = w * sc; let drawH = h * sc;
         
-        // Ground Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.beginPath(); ctx.ellipse(p.x, p.y + (10*sc), drawW*0.6, drawW*0.2, 0, 0, Math.PI*2); ctx.fill();
 
         ctx.fillStyle = color; ctx.shadowBlur = 15; ctx.shadowColor = color;
         ctx.fillRect(p.x - drawW/2, p.y - drawH, drawW, drawH);
         
-        // Inner detail lines
         ctx.lineWidth = 1; ctx.strokeStyle = '#fff'; ctx.strokeRect(p.x - drawW/2, p.y - drawH, drawW, drawH); ctx.shadowBlur = 0;
-        
-        // Windows
         ctx.fillStyle = '#050510'; ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.8, drawW*0.8, drawH*0.3);
-        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.8, drawW*0.8, drawH*0.05); // Glare
-
-        // Taillights
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.8, drawW*0.8, drawH*0.05); 
         ctx.fillStyle = isPlayer ? '#fff' : '#ff0';
         ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.2, drawW*0.2, drawH*0.1);
         ctx.fillRect(p.x + drawW*0.2, p.y - drawH*0.2, drawW*0.2, drawH*0.1);
     }
 
     function draw3DCollectible(x, y, z, w, type) {
-        let p = project3D(x, y + Math.sin(Date.now()/150)*15, z, cameraX, cameraZ);
-        if(!p) return;
-        
+        let p = project3D(x, y + Math.sin(Date.now()/150)*15, z, cameraX, cameraZ); if(!p) return;
         let sc = p.scale; let drawW = w * sc;
         ctx.save(); ctx.translate(p.x, p.y - drawW/2);
 
@@ -635,41 +590,32 @@
         ctx.restore();
     }
 
-    let cameraX = 0;
-
     function draw() {
-        // Camera smoothly follows player X to create a banking effect
-        cameraX += (player.x * 0.5 - cameraX) * 0.1;
+        let pX = player.x || 0; // Safeguard if object is empty
+        cameraX += (pX * 0.5 - cameraX) * 0.1;
 
-        // Background
         ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Sun & Skyline (Pan opposite to cameraX for parallax)
+        // Sun & Skyline Horizon
         let panX = -cameraX * 0.2;
         let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 80, 0, HORIZON_Y); 
         sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
         ctx.save(); ctx.shadowBlur = 40; ctx.shadowColor = '#f0f'; ctx.fillStyle = sunGrad; 
         ctx.beginPath(); ctx.arc(canvas.width / 2 + panX, HORIZON_Y, 80, Math.PI, 0); ctx.fill(); ctx.restore();
-        
-        // Sun cutouts
         ctx.fillStyle = '#050510'; for(let i=0; i<7; i++) { ctx.fillRect(canvas.width/2 + panX - 90, HORIZON_Y - 10 - (i*12), 180, i+1); }
 
-        // Draw 3D Grid Floor
-        ctx.lineWidth = 1;
-        let zOffset = cameraZ % 100;
-        
-        // Horizontal moving lines
+        // 3D Grid Floor
+        ctx.lineWidth = 1; let zOffset = cameraZ % 100;
         for (let z = 10; z < RENDER_DISTANCE; z += 100) {
             let actualZ = cameraZ + z - zOffset;
             let p1 = project3D(-1500, 0, actualZ, cameraX, cameraZ);
             let p2 = project3D(1500, 0, actualZ, cameraX, cameraZ);
             if(p1 && p2) {
-                let alpha = 1 - (z / RENDER_DISTANCE); // Fade in distance
+                let alpha = 1 - (z / RENDER_DISTANCE); 
                 ctx.strokeStyle = `rgba(0, 255, 255, ${alpha * 0.6})`;
                 ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
             }
         }
-        // Vertical perspective lines
         for (let x = -1500; x <= 1500; x += 150) {
             let p1 = project3D(x, 0, cameraZ + 10, cameraX, cameraZ);
             let p2 = project3D(x, 0, cameraZ + RENDER_DISTANCE, cameraX, cameraZ);
@@ -679,17 +625,15 @@
             }
         }
 
-        // Draw Entities (Z-Sorted)
         let renderList = [...entities];
-        if (!isGameOver) {
+        if (!isGameOver && isGameRunning) {
             renderList.push({ type: 'player', x: player.x, y: player.y, z: cameraZ + player.zOffset, w: player.width, h: player.height, d: player.depth, color: player.color });
         }
         
-        // Sort furthest to closest (Painter's Algorithm)
         renderList.sort((a, b) => b.z - a.z);
 
         for (let e of renderList) {
-            if(e.z < cameraZ) continue; // Behind camera skip
+            if(e.z < cameraZ) continue; 
             
             if (e.type === 'enemy' || e.type === 'player') {
                 if (e.type === 'player' && player.shield) {
@@ -701,9 +645,7 @@
                 }
                 draw3DBox(e.x, e.y, e.z, e.w, e.h, e.color, e.type === 'player');
             } 
-            else if (e.type === 'gold' || e.type === 'shield' || e.type === 'magnet') {
-                draw3DCollectible(e.x, e.y, e.z, e.w, e.type);
-            }
+            else if (e.type === 'gold' || e.type === 'shield' || e.type === 'magnet') { draw3DCollectible(e.x, e.y, e.z, e.w, e.type); }
             else if (e.type === 'particle') {
                 let p = project3D(e.x, e.y, e.z, cameraX, cameraZ);
                 if(p) {
@@ -722,14 +664,14 @@
             }
         }
 
-        // Screen Borders Vignette
         let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, 400);
         grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.8)');
         ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
     function gameLoop(timestamp) {
-        if (isPaused) return; if (!isGameRunning) { draw(); return; }
+        if (isPaused) return; 
+        if (!isGameRunning) { draw(); return; } // Returns without queueing next frame if stopped
         let dt = timestamp - lastTime; lastTime = timestamp; if (dt > 100) dt = 16.6; 
         update(dt); draw(); animationId = requestAnimationFrame(gameLoop);
     }
@@ -740,8 +682,12 @@
         createExplosion3D(player.x, player.y, pZ, '#0ff', 40, 40, 1000); createExplosion3D(player.x, player.y, pZ, '#fff', 20, 50, 800);
         finalScoreElement.innerText = score; hud.style.display = 'none';
         setTimeout(() => { gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50); }, 1200);
+        
+        // Push a final draw frame to render the explosion after game loop halts
+        requestAnimationFrame(() => { draw(); });
     }
 
+    // Render the very first frame so the player sees the background before hitting start
     requestAnimationFrame((timestamp) => { lastTime = timestamp; draw(); });
 </script>
 </body>
