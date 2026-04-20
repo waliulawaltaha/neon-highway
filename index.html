@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Highway</title>
+    <title>Neon Highway 3D</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
@@ -29,11 +29,11 @@
         }
 
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-4px, 0px) rotate(2deg); }
+            40% { transform: translate(2px, -2px) rotate(-1deg); }
+            60% { transform: translate(-4px, 2px) rotate(0deg); }
+            80% { transform: translate(-2px, -2px) rotate(1deg); }
             100% { transform: translate(0px, 0px) rotate(0deg); }
         }
         .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
@@ -54,6 +54,7 @@
 
         canvas { display: block; }
 
+        /* HUD Improvements */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -90,23 +91,14 @@
             pointer-events: auto; text-align: center; z-index: 10; transition: opacity 0.3s;
         }
 
-        .grid-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(0, 255, 255, 0.2) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(0, 255, 255, 0.2) 1px, transparent 1px);
-            background-size: 40px 40px; transform: perspective(300px) rotateX(60deg) translateY(0);
-            animation: gridMove 2s linear infinite; z-index: -1; opacity: 0.3;
-        }
-        @keyframes gridMove { from { background-position: 0 0; } to { background-position: 0 40px; } }
-
         #game-over, #pause-screen { display: none; opacity: 0; }
 
-        h1 { margin: 0 0 10px 0; font-size: 40px; font-weight: 900; color: #fff; letter-spacing: 2px; }
+        h1 { margin: 0 0 10px 0; font-size: 38px; font-weight: 900; color: #fff; letter-spacing: 2px; }
         .neon-text-blue { text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #00f; }
         .neon-text-red { text-shadow: 0 0 10px #f00, 0 0 20px #f00, 0 0 40px #900; }
         .neon-text-magenta { text-shadow: 0 0 10px #f0f, 0 0 20px #f0f; }
 
-        .stats { background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .stats { background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
         p { margin: 6px 0; font-size: 13px; color: #ddd; }
         .highlight-gold { color: #ff0; font-weight: bold; text-shadow: 0 0 5px #ff0; }
         .highlight-blue { color: #0bf; font-weight: bold; text-shadow: 0 0 5px #0bf; }
@@ -116,7 +108,6 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         .btn-row { display: flex; gap: 15px; margin-top: 15px; justify-content: center; align-items: center;}
-        
         button.action-btn {
             padding: 12px 25px; font-size: 16px; font-family: inherit; font-weight: 700;
             background: rgba(0, 255, 255, 0.05); color: #0ff; border: 2px solid #0ff;
@@ -133,28 +124,18 @@
         .icon-btn:hover { background: #0ff; color: #000; }
         .icon-btn.disabled { color: #888; border-color: #555; text-shadow: none; }
 
-        /* --- Social Share Area --- */
-        .share-section {
-            margin-top: 15px; padding-top: 15px; width: 90%;
-            border-top: 1px solid rgba(0, 255, 255, 0.2);
-        }
+        /* Share Buttons Section */
+        .share-section { margin-top: 10px; padding-top: 15px; border-top: 1px solid rgba(0, 255, 255, 0.2); width: 90%; }
         .share-title { font-size: 12px; color: #aaa; letter-spacing: 2px; margin-bottom: 10px; }
-        
         .social-btn {
-            display: flex; justify-content: center; align-items: center;
-            width: 40px; height: 40px; border-radius: 8px; background: rgba(0,0,0,0.6);
-            border: 1px solid rgba(0,255,255,0.3); color: #fff; cursor: pointer;
-            transition: 0.3s; pointer-events: auto;
+            display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,255,255,0.3); color: #fff; cursor: pointer; transition: 0.3s; pointer-events: auto;
         }
         .social-btn svg { width: 20px; height: 20px; fill: currentColor; }
-        
-        /* Brand Colors on Hover */
         .social-btn.native:hover { background: #0ff; color: #000; box-shadow: 0 0 15px #0ff; border-color: #0ff; }
         .social-btn.x:hover { background: #fff; color: #000; box-shadow: 0 0 15px #fff; border-color: #fff; }
         .social-btn.wa:hover { background: #25D366; box-shadow: 0 0 15px #25D366; border-color: #25D366; }
         .social-btn.fb:hover { background: #1877F2; box-shadow: 0 0 15px #1877F2; border-color: #1877F2; }
-        .social-btn.th:hover { background: #fff; color: #000; box-shadow: 0 0 15px #fff; border-color: #fff; }
-        .social-btn.ig:hover { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); box-shadow: 0 0 15px #dc2743; border-color: transparent; }
         
         #toast {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -162,10 +143,8 @@
             font-weight: bold; font-size: 14px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 20;
             box-shadow: 0 0 20px rgba(0,255,255,0.6);
         }
-
-        .controls-hint { font-size: 11px; color: #aaa; margin-top: 15px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        #credits { text-align: center; padding: 10px; font-size: 11px; letter-spacing: 1px; background: rgba(0, 0, 0, 0.85); pointer-events: auto; border-top: 1px solid rgba(0,255,255,0.3); }
+        .controls-hint { font-size: 10px; color: #aaa; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        #credits { text-align: center; padding: 8px; font-size: 11px; letter-spacing: 1px; background: rgba(0, 0, 0, 0.85); pointer-events: auto; border-top: 1px solid rgba(0,255,255,0.3); }
         #credits a { color: #f0f; text-decoration: none; font-weight: bold; transition: 0.3s; }
         #credits a:hover { color: #fff; text-shadow: 0 0 10px #fff; }
     </style>
@@ -213,8 +192,7 @@
         </div>
 
         <div id="start-screen" class="screen-overlay">
-            <div class="grid-bg"></div>
-            <h1 class="neon-text-blue">NEON HIGHWAY</h1>
+            <h1 class="neon-text-blue">NEON HIGHWAY 3D</h1>
             <div class="stats">
                 <p>Collect <span class="highlight-gold">Gold</span> to build Multipliers!</p>
                 <p>Grab <span class="highlight-blue">Shields</span> to deflect one crash.</p>
@@ -226,15 +204,12 @@
                 <button class="icon-btn" id="crt-toggle" onclick="toggleCRT()">CRT: ON</button>
                 <button class="icon-btn" id="snd-toggle" onclick="toggleMute()">SND: ON</button>
             </div>
-
             <div class="controls-hint">⌨️ Arrows/WASD • 🖱️ Drag Mouse • 📱 Drag Finger</div>
         </div>
 
         <div id="pause-screen" class="screen-overlay">
             <h1 class="neon-text-magenta">PAUSED</h1>
-            <div class="btn-row">
-                <button class="action-btn" onclick="togglePause()">RESUME [ESC]</button>
-            </div>
+            <div class="btn-row"><button class="action-btn" onclick="togglePause()">RESUME [ESC]</button></div>
             <div class="btn-row">
                 <button class="icon-btn" id="crt-toggle-pause" onclick="toggleCRT()">CRT: ON</button>
                 <button class="icon-btn" id="snd-toggle-pause" onclick="toggleMute()">SND: ON</button>
@@ -248,34 +223,20 @@
             
             <div class="share-section">
                 <div class="share-title">BROADCAST YOUR RUN</div>
-                
                 <button class="action-btn" onclick="shareScore('native')" style="padding: 10px 20px; font-size: 14px; margin-top: 0;">
                     <span style="display:flex; align-items:center; gap:8px;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                         SHARE SCORE
                     </span>
                 </button>
-
                 <div class="btn-row">
-                    <button class="social-btn wa" onclick="shareScore('wa')" title="WhatsApp">
-                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                    </button>
-                    <button class="social-btn x" onclick="shareScore('x')" title="X (Twitter)">
-                        <svg viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>
-                    </button>
-                    <button class="social-btn fb" onclick="shareScore('fb')" title="Facebook">
-                        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    </button>
-                    <button class="social-btn th" onclick="shareScore('threads')" title="Threads">
-                        <svg viewBox="0 0 24 24"><path d="M16.793 11.132A4.773 4.773 0 0 0 16 8.5c-1.045-1.5-2.613-2.25-4.5-2.25-1.5 0-2.887.5-3.863 1.368-1.125.938-1.875 2.5-1.875 4.382 0 2 .75 3.375 1.875 4.313.975.862 2.363 1.362 3.863 1.362 1.888 0 3.037-.938 3.525-2.137h2.25c-.563 2.25-2.438 3.938-5.775 3.938-2.363 0-4.388-.863-5.775-2.25-1.5-1.5-2.25-3.5-2.25-5.25 0-1.875.75-3.862 2.25-5.362 1.388-1.388 3.413-2.25 5.775-2.25 3.038 0 5.363 1.125 6.863 3.375 1.125 1.688 1.688 3.938 1.688 6.563v1.5h-8.813c.188 1.125.938 1.688 2.063 1.688 1.125 0 1.875-.563 2.063-1.688h2.062c-.187 2.063-1.5 3.188-4.125 3.188-2.625 0-4.125-1.5-4.125-3.563 0-2.062 1.5-3.562 4.125-3.562 1.313 0 2.438.375 3.188 1.125.563.562.938 1.312 1.125 2.062h-4.313c-.187-.937-.75-1.5-1.687-1.5-.938 0-1.5.563-1.688 1.5h6.188Z"/></svg>
-                    </button>
-                    <button class="social-btn ig" onclick="shareScore('copy')" title="Copy for Instagram/Messenger">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    </button>
+                    <button class="social-btn wa" onclick="shareScore('wa')" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg></button>
+                    <button class="social-btn x" onclick="shareScore('x')" title="X (Twitter)"><svg viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg></button>
+                    <button class="social-btn fb" onclick="shareScore('fb')" title="Facebook"><svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></button>
                 </div>
             </div>
 
-            <button class="action-btn" onclick="initGame()" style="margin-top: 20px; font-size: 14px; padding: 10px 20px; border-color: rgba(0,255,255,0.5);">REBOOT [ENTER]</button>
+            <button class="action-btn" onclick="initGame()" style="margin-top: 20px; font-size: 14px; padding: 10px 20px;">REBOOT [ENTER]</button>
         </div>
     </div>
 </div>
@@ -284,7 +245,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // UI Elements
+    // UI Setup & Scaling
     const gameWrapper = document.getElementById('game-wrapper');
     const gameContainer = document.getElementById('game-container');
     const flashOverlay = document.getElementById('screen-flash');
@@ -302,11 +263,6 @@
     const finalScoreElement = document.getElementById('final-score');
     const toast = document.getElementById('toast');
     
-    const crtBtn = document.getElementById('crt-toggle');
-    const crtBtnPause = document.getElementById('crt-toggle-pause');
-    const sndBtn = document.getElementById('snd-toggle');
-    const sndBtnPause = document.getElementById('snd-toggle-pause');
-
     function scaleGameToFit() {
         const baseWidth = 440; const baseHeight = 640;
         const scaleX = window.innerWidth / baseWidth; const scaleY = window.innerHeight / baseHeight;
@@ -315,82 +271,75 @@
     }
     window.addEventListener('resize', scaleGameToFit); scaleGameToFit();
 
-    // Preferences
-    let savedHighScore = localStorage.getItem('neonHighScore') || 0;
+    // Preferences & Social
+    let savedHighScore = localStorage.getItem('neonHighScore3D') || 0;
     highScoreElement.innerText = savedHighScore;
     let crtEnabled = localStorage.getItem('neonCRT') !== 'false'; 
     let soundEnabled = localStorage.getItem('neonSND') !== 'false'; 
 
     function applyPreferences() {
-        if (!crtEnabled) gameContainer.classList.add('crt-off'); else gameContainer.classList.remove('crt-off');
-        let crtText = crtEnabled ? 'CRT: ON' : 'CRT: OFF';
-        crtBtn.innerText = crtText; crtBtnPause.innerText = crtText;
-        if(!crtEnabled) { crtBtn.classList.add('disabled'); crtBtnPause.classList.add('disabled'); }
-        else { crtBtn.classList.remove('disabled'); crtBtnPause.classList.remove('disabled'); }
-
-        let sndText = soundEnabled ? 'SND: ON' : 'SND: OFF';
-        sndBtn.innerText = sndText; sndBtnPause.innerText = sndText;
-        if(!soundEnabled) { sndBtn.classList.add('disabled'); sndBtnPause.classList.add('disabled'); }
-        else { sndBtn.classList.remove('disabled'); sndBtnPause.classList.remove('disabled'); }
+        gameContainer.classList.toggle('crt-off', !crtEnabled);
+        document.querySelectorAll('[id^="crt-toggle"]').forEach(b => { b.innerText = crtEnabled ? 'CRT: ON' : 'CRT: OFF'; b.classList.toggle('disabled', !crtEnabled); });
+        document.querySelectorAll('[id^="snd-toggle"]').forEach(b => { b.innerText = soundEnabled ? 'SND: ON' : 'SND: OFF'; b.classList.toggle('disabled', !soundEnabled); });
     }
     applyPreferences();
     function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
     function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
 
-    // --- SHARING SYSTEM ---
-    function showToast(msg) {
-        toast.innerText = msg; toast.style.opacity = '1';
-        setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-    }
-
+    function showToast(msg) { toast.innerText = msg; toast.style.opacity = '1'; setTimeout(() => { toast.style.opacity = '0'; }, 3000); }
     function shareScore(platform) {
-        // Fallback to website if testing locally
-        let url = window.location.href; 
-        if (url.includes('file://') || url.includes('127.0.0.1')) url = 'http://www.waliulawaltaha.com'; 
-        
+        let url = window.location.href; if (url.includes('file://') || url.includes('127.0.0.1')) url = 'http://www.waliulawaltaha.com'; 
         const text = `I just survived the Neon Highway and scored ${score}! 🏎️✨ Can you beat my high score?`;
-
-        if (platform === 'native' && navigator.share) {
-            // Uses the phone's native share menu (great for IG, Messenger, Messages)
-            navigator.share({ title: 'Neon Highway', text: text, url: url })
-                .catch(err => console.log('Share canceled', err));
-        } else if (platform === 'x') {
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-        } else if (platform === 'wa') {
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`, '_blank');
-        } else if (platform === 'fb') {
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-        } else if (platform === 'threads') {
-            window.open(`https://threads.net/intent/post?text=${encodeURIComponent(text + " " + url)}`, '_blank');
-        } else {
-            // Copy to clipboard (Fallback for Instagram/Messenger on desktop, or native share failure)
-            navigator.clipboard.writeText(`${text} Play here: ${url}`).then(() => {
-                showToast("Copied! Paste in IG, Messenger, etc.");
-            }).catch(() => {
-                showToast("Failed to copy. Try again.");
-            });
-        }
+        if (platform === 'native' && navigator.share) { navigator.share({ title: 'Neon Highway', text: text, url: url }).catch(err => {}); }
+        else if (platform === 'x') { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank'); } 
+        else if (platform === 'wa') { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`, '_blank'); } 
+        else if (platform === 'fb') { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank'); } 
+        else { navigator.clipboard.writeText(`${text} Play here: ${url}`).then(() => { showToast("Copied! Paste anywhere."); }).catch(() => { showToast("Failed to copy."); }); }
     }
 
-    // Game Variables
+    // --- 3D ENGINE MATH ---
+    const FOCAL_LENGTH = 300;
+    const CAMERA_Y = 120;
+    const HORIZON_Y = 150; // Y coordinate where road meets sky
+    const RENDER_DISTANCE = 2500;
+
+    // Project 3D world coordinates (X, Y, Z) to 2D canvas coordinates (x, y)
+    function project3D(wX, wY, wZ, camX, camZ) {
+        let dz = wZ - camZ;
+        if (dz <= 10) return null; // Behind camera
+        let scale = FOCAL_LENGTH / dz;
+        let px = (canvas.width / 2) + ((wX - camX) * scale);
+        let py = HORIZON_Y + ((CAMERA_Y - wY) * scale);
+        return { x: px, y: py, scale: scale, depth: dz };
+    }
+
+    // --- GAME VARIABLES ---
     let animationId; let lastTime = 0;
     let score = 0; let level = 1; let combo = 0; let multiplier = 1;
-    let baseSpeed = 0.35; let currentSpeed = baseSpeed;
-    let spawnTimer = 0; let spawnInterval = 1400; let collectibleTimer = 0; let chevronTimer = 0;
+    
+    // Z-axis movement
+    let cameraZ = 0; 
+    let baseSpeed = 1500; // Units per second
+    let currentSpeed = baseSpeed;
+    let spawnTimer = 0; let collectibleTimer = 0;
     let isGameOver = false; let isGameRunning = false; let isPaused = false;
-    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; let targetX = null; 
+    let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false }; 
+    let targetX = null; 
 
-    let player = {}; let obstacles = []; let collectibles = []; let laneMarkers = []; let chevrons = [];
-    let particles = []; let speedLines = []; let floatingTexts = [];
+    // World Entities
+    let player = {}; 
+    let entities = []; // Combines obstacles, collectibles, particles for Z-sorting
+    let floatingTexts = [];
 
     const ENEMY_TYPES = [
-        { w: 40, h: 75, color: '#f0f', speedMult: 0.75 }, { w: 34, h: 80, color: '#f80', speedMult: 0.95 }, { w: 50, h: 95, color: '#f00', speedMult: 0.55 }   
+        { w: 80, h: 45, d: 150, color: '#f0f', speedMult: 0.6 }, 
+        { w: 70, h: 40, d: 140, color: '#f80', speedMult: 0.8 },    
+        { w: 100, h: 60, d: 180, color: '#f00', speedMult: 0.4 }   
     ];
 
-    // Audio
+    // Audio Synth (Kept from previous version)
     const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
     function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-
     function playTone(freq, type, duration, vol) {
         if (!soundEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -413,7 +362,7 @@
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
     }
 
-    // Controls
+    // Controls Handling
     window.addEventListener('keydown', (e) => { 
         if(keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = keys[e.key] = true; 
         if((e.key === 'Escape' || e.key.toLowerCase() === 'p') && isGameRunning && !isGameOver) togglePause();
@@ -424,8 +373,11 @@
 
     function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; 
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX); return (clientX - rect.left) * scaleX;
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX); 
+        // Map pointer from screen space to world X space roughly
+        return ((clientX - rect.left) * scaleX - (canvas.width/2)) * 2.5; 
     }
+    
     canvas.addEventListener('mousedown', (e) => { if(isGameRunning && !isPaused) targetX = getPointerPos(e); });
     canvas.addEventListener('mousemove', (e) => { if(isGameRunning && !isPaused && e.buttons > 0) targetX = getPointerPos(e); });
     canvas.addEventListener('mouseup', () => targetX = null); canvas.addEventListener('mouseleave', () => targetX = null);
@@ -433,28 +385,29 @@
     canvas.addEventListener('touchmove', (e) => { if(!isGameRunning || isPaused) return; e.preventDefault(); targetX = getPointerPos(e); }, { passive: false });
     canvas.addEventListener('touchend', (e) => { e.preventDefault(); targetX = null; }, { passive: false });
 
-    // FX
-    class Particle {
-        constructor(x, y, color, speed, life, size = 3) {
-            this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * speed; this.vy = (Math.random() - 0.5) * speed;
-            this.color = color; this.life = life; this.maxLife = life; this.size = Math.random() * size + 1;
+    // 3D Particle
+    class Particle3D {
+        constructor(x, y, z, color, speed, life) {
+            this.x = x; this.y = y; this.z = z;
+            this.vx = (Math.random() - 0.5) * speed; this.vy = Math.random() * speed * 0.5; this.vz = (Math.random() - 0.5) * speed;
+            this.color = color; this.life = life; this.maxLife = life; this.type = 'particle';
         }
-        update(dt) { this.x += this.vx * (dt/16); this.y += this.vy * (dt/16); this.life -= dt; }
-        draw(ctx) { ctx.globalAlpha = Math.max(0, this.life/this.maxLife); ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0; }
+        update(dt) { this.x += this.vx * (dt/16); this.y += this.vy * (dt/16); this.z += this.vz * (dt/16); this.life -= dt; }
     }
-    class FloatingText {
-        constructor(x, y, text, color, scale=1) {
-            this.x = x; this.y = y; this.text = text; this.color = color; this.scale = scale; this.life = 1000; this.maxLife = 1000;
+    
+    // 3D Text
+    class FloatingText3D {
+        constructor(x, y, z, text, color, scale=1) {
+            this.x = x; this.y = y; this.z = z; this.text = text; this.color = color; this.scale = scale; 
+            this.life = 1000; this.maxLife = 1000; this.type = 'text';
         }
-        update(dt) { this.y -= (dt/16) * 1.5; this.life -= dt; }
-        draw(ctx) {
-            ctx.globalAlpha = Math.max(0, this.life/this.maxLife); ctx.fillStyle = this.color; 
-            ctx.font = `bold ${16 * this.scale}px Orbitron`; ctx.textAlign = 'center';
-            ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillText(this.text, this.x, this.y);
-            ctx.shadowBlur = 0; ctx.globalAlpha = 1.0; ctx.textAlign = 'left';
-        }
+        update(dt) { this.y += (dt/16) * 2; this.life -= dt; } // Float UP in 3D world
     }
-    function createExplosion(x, y, color, amount=30, speed=15, life=800) { for (let i = 0; i < amount; i++) particles.push(new Particle(x, y, color, speed, life)); }
+
+    function createExplosion3D(x, y, z, color, amount=30, speed=20, life=800) { 
+        for (let i = 0; i < amount; i++) entities.push(new Particle3D(x, y, z, color, speed, life)); 
+    }
+    
     function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
     
     function updateHUD() { 
@@ -466,7 +419,7 @@
     function breakCombo() {
         if(combo > 0) {
             combo = 0; multiplier = 1; updateHUD(); soundComboDrop();
-            floatingTexts.push(new FloatingText(player.x + 20, player.y - 20, "COMBO BROKEN", "#f00", 0.8));
+            entities.push(new FloatingText3D(player.x, player.y + 40, player.z, "COMBO BROKEN", "#f00", 0.8));
         }
     }
 
@@ -480,189 +433,299 @@
     function initGame() {
         if(isGameRunning) return; 
         initAudio(); soundStart();
-        score = 0; level = 1; combo = 0; multiplier = 1; currentSpeed = baseSpeed; 
-        spawnInterval = 1400; spawnTimer = 0; collectibleTimer = 0; chevronTimer = 0;
+        score = 0; level = 1; combo = 0; multiplier = 1; currentSpeed = baseSpeed; cameraZ = 0;
+        spawnTimer = 0; collectibleTimer = 0; 
         isGameOver = false; isGameRunning = true; isPaused = false;
-        obstacles = []; collectibles = []; laneMarkers = []; chevrons = []; particles = []; speedLines = []; floatingTexts = [];
+        
+        entities = []; floatingTexts = [];
         scoreElement.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
         
-        player = { x: 180, y: 480, width: 40, height: 75, vx: 0, acceleration: 1.0, friction: 0.80, maxSpeed: 9, color: '#0ff', shield: false, magnetTime: 0 };
+        // Player is fixed on Z axis relative to camera
+        player = { x: 0, y: 0, zOffset: 300, width: 80, height: 40, depth: 140, vx: 0, acceleration: 1.5, friction: 0.82, maxSpeed: 25, color: '#0ff', shield: false, magnetTime: 0 };
         updateHUD(); for (let key in keys) keys[key] = false; targetX = null;
-        
         magnetBarContainer.style.display = 'none';
         
-        for (let i = 0; i < 6; i++) laneMarkers.push({ y: i * 120 });
-        for (let i = 0; i < 10; i++) speedLines.push({ x: Math.random() > 0.5 ? 5 : 390, y: Math.random() * 600, len: Math.random() * 50 + 20 });
         startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
         pauseScreen.style.display = 'none'; pauseScreen.style.opacity = '0'; hud.style.display = 'flex';
         lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
     }
 
-    function detectCollision(rect1, rect2, marginX=5, marginY=8) {
-        return ( rect1.x + marginX < rect2.x + rect2.width - marginX && rect1.x + rect1.width - marginX > rect2.x + marginX &&
-                 rect1.y + marginY < rect2.y + rect2.height - marginY && rect1.y + rect1.height - marginY > rect2.y + marginY );
+    // 3D AABB Collision
+    function detectCollision3D(p, obj) {
+        let pZ = cameraZ + p.zOffset;
+        return ( Math.abs(p.x - obj.x) < (p.width/2 + obj.w/2 - 10) && 
+                 Math.abs(pZ - obj.z) < (p.depth/2 + obj.d/2 - 20) ); // Margin forgiving
     }
 
     function addScore(points) {
         score += points; scoreElement.innerText = score;
-        if (score > savedHighScore) { savedHighScore = score; highScoreElement.innerText = savedHighScore; localStorage.setItem('neonHighScore', savedHighScore); }
+        if (score > savedHighScore) { savedHighScore = score; highScoreElement.innerText = savedHighScore; localStorage.setItem('neonHighScore3D', savedHighScore); }
         if (score >= level * 200) {
-            level++; currentSpeed += 0.03; spawnInterval = Math.max(500, spawnInterval - 50);
+            level++; currentSpeed += 100; // Increase speed
             updateSpeedometer(); soundLevelUp();
-            floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, `LEVEL ${level}`, "#f0f", 2));
-            floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2 + 30, "SPEED UP!", "#0ff", 1.2));
+            entities.push(new FloatingText3D(player.x, 50, cameraZ + 500, `LEVEL ${level}`, "#f0f", 2));
         }
     }
-    function updateSpeedometer() { speedDisplay.innerText = Math.floor(currentSpeed * 350); }
+    function updateSpeedometer() { speedDisplay.innerText = Math.floor(currentSpeed / 10); }
 
     function update(dt) {
-        if (isGameOver) { for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); } return; }
+        if (isGameOver) { 
+            // Update particles only
+            for (let i = entities.length - 1; i >= 0; i--) { 
+                let e = entities[i];
+                if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
+            } return; 
+        }
+        
         let timeScale = dt / 16.6;
 
-        if (targetX !== null) { let diff = targetX - (player.x + player.width/2); if (Math.abs(diff) > 3) player.vx += Math.sign(diff) * player.acceleration * timeScale * 1.2; } 
-        else { if (keys.ArrowLeft || keys.a) player.vx -= player.acceleration * timeScale; if (keys.ArrowRight || keys.d) player.vx += player.acceleration * timeScale; }
+        // Player X Movement
+        if (targetX !== null) { 
+            let diff = targetX - player.x; 
+            if (Math.abs(diff) > 5) player.vx += Math.sign(diff) * player.acceleration * timeScale * 1.5; 
+        } else { 
+            if (keys.ArrowLeft || keys.a) player.vx -= player.acceleration * timeScale; 
+            if (keys.ArrowRight || keys.d) player.vx += player.acceleration * timeScale; 
+        }
 
         player.vx *= Math.pow(player.friction, timeScale);
         if (player.vx > player.maxSpeed) player.vx = player.maxSpeed; if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
         player.x += player.vx * timeScale;
-        if (player.x < 15) { player.x = 15; player.vx = 0; } if (player.x > canvas.width - player.width - 15) { player.x = canvas.width - player.width - 15; player.vx = 0; }
+        
+        // Road bounds
+        if (player.x < -600) { player.x = -600; player.vx = 0; } 
+        if (player.x > 600) { player.x = 600; player.vx = 0; }
 
-        if (Math.random() > 0.4) { particles.push(new Particle(player.x + 8, player.y + player.height, '#0ff', 1.5, 200)); particles.push(new Particle(player.x + player.width - 8, player.y + player.height, '#0ff', 1.5, 200)); }
+        // Advance Camera
+        cameraZ += currentSpeed * (dt/1000);
+        let playerZ = cameraZ + player.zOffset;
 
-        // Magnet Logic
+        // Exhaust Particles
+        if (Math.random() > 0.4) { 
+            entities.push(new Particle3D(player.x - 20, 10, playerZ - 70, '#0ff', 5, 200)); 
+            entities.push(new Particle3D(player.x + 20, 10, playerZ - 70, '#0ff', 5, 200)); 
+        }
+
+        // Magnet HUD
         if (player.magnetTime > 0) {
             player.magnetTime -= dt;
             magnetBar.style.width = `${(player.magnetTime / 10000) * 100}%`;
             if (player.magnetTime <= 0) magnetBarContainer.style.display = 'none';
         }
 
-        let moveDist = currentSpeed * dt;
-        for (let i = 0; i < laneMarkers.length; i++) { laneMarkers[i].y += moveDist; if (laneMarkers[i].y > canvas.height) laneMarkers[i].y -= 720; }
-        for (let i = 0; i < speedLines.length; i++) { speedLines[i].y += moveDist * 2.5; if (speedLines[i].y > canvas.height) { speedLines[i].y = -100; speedLines[i].x = Math.random() > 0.5 ? Math.random()*10 : canvas.width - Math.random()*10; } }
-
-        // Road Chevrons
-        chevronTimer += dt;
-        if (chevronTimer > 800) { chevrons.push({y: -50}); chevronTimer = 0; }
-        for (let i = 0; i < chevrons.length; i++) { chevrons[i].y += moveDist; if(chevrons[i].y > canvas.height) { chevrons.splice(i, 1); i--; } }
-
+        // Spawners
         spawnTimer += dt;
-        if (spawnTimer > spawnInterval) {
-            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; let x = Math.random() * (canvas.width - type.w - 40) + 20;
-            obstacles.push({ x: x, y: -type.h, width: type.w, height: type.h, color: type.color, speedMult: type.speedMult }); spawnTimer = 0;
+        if (spawnTimer > Math.max(500, 1500 - (level*50))) {
+            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; 
+            let x = (Math.random() * 1200) - 600; 
+            entities.push({ type: 'enemy', x: x, y: 0, z: cameraZ + RENDER_DISTANCE, w: type.w, h: type.h, d: type.d, color: type.color, speed: currentSpeed * type.speedMult }); 
+            spawnTimer = 0;
         }
 
         collectibleTimer += dt;
-        if (collectibleTimer > 2000) {
-            if(Math.random() > 0.3) { 
-                let s = 20; let x = Math.random() * (canvas.width - s - 40) + 20; 
-                let rand = Math.random(); let type = 'gold';
-                if(rand > 0.90) type = 'shield'; else if(rand > 0.80) type = 'magnet';
-                collectibles.push({x: x, y: -s, width: s, height: s, type: type}); 
+        if (collectibleTimer > 1500) {
+            if(Math.random() > 0.4) { 
+                let x = (Math.random() * 1200) - 600; 
+                let rand = Math.random(); let cType = 'gold';
+                if(rand > 0.92) cType = 'shield'; else if(rand > 0.84) cType = 'magnet';
+                entities.push({ type: cType, x: x, y: 30, z: cameraZ + RENDER_DISTANCE, w: 40, h: 40, d: 40 }); 
             }
             collectibleTimer = 0;
         }
 
-        for (let i = 0; i < obstacles.length; i++) {
-            obstacles[i].y += moveDist * obstacles[i].speedMult; 
-            if (detectCollision(player, obstacles[i])) {
-                if (player.shield) {
-                    player.shield = false; updateHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
-                    createExplosion(obstacles[i].x + 20, obstacles[i].y + 35, obstacles[i].color, 30, 15, 600);
-                    floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "DEFLECTED!", "#0bf"));
-                    obstacles.splice(i, 1); i--; continue;
-                } else { endGame(); }
-            }
-            if (obstacles[i].y > canvas.height) { obstacles.splice(i, 1); i--; addScore(10); }
-        }
-
-        for (let i = 0; i < collectibles.length; i++) {
-            // Magnet pull physics
-            if (collectibles[i].type === 'gold' && player.magnetTime > 0) {
-                let dx = (player.x + player.width/2) - (collectibles[i].x + collectibles[i].width/2);
-                let dy = (player.y + player.height/2) - (collectibles[i].y + collectibles[i].height/2);
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 250) { 
-                    collectibles[i].x += (dx / dist) * 12 * timeScale; collectibles[i].y += (dy / dist) * 12 * timeScale;
-                }
-            } else { collectibles[i].y += moveDist; }
-
-            let hoverY = collectibles[i].y + Math.sin(Date.now() / 150) * 3; let cBox = {x: collectibles[i].x, y: hoverY, width: collectibles[i].width, height: collectibles[i].height};
+        // Process Entities
+        for (let i = 0; i < entities.length; i++) {
+            let e = entities[i];
             
-            if (detectCollision(player, cBox, 0, 0)) {
-                if (collectibles[i].type === 'gold') {
-                    combo++;
-                    if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2;
-                    updateHUD();
-                    let pitch = 1 + (multiplier * 0.1); soundCollect(pitch); 
-                    createExplosion(cBox.x + 10, cBox.y + 10, '#ff0', 15, 8, 400); 
-                    let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0'; let txt = `+${50 * multiplier}`;
-                    floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, txt, col, 1 + (multiplier*0.2))); 
-                    addScore(50 * multiplier); 
-                } else if (collectibles[i].type === 'shield') {
-                    soundShieldUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#0bf', 20, 10, 500); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "SHIELD UP", "#0bf"));
-                    player.shield = true; updateHUD(); addScore(10);
-                } else if (collectibles[i].type === 'magnet') {
-                    soundMagnetUp(); createExplosion(cBox.x + 10, cBox.y + 10, '#b0f', 20, 10, 500); floatingTexts.push(new FloatingText(player.x + 20, player.y - 10, "MAGNET!", "#b0f"));
-                    player.magnetTime = 10000; magnetBarContainer.style.display = 'block'; addScore(10);
+            if (e.type === 'enemy') {
+                e.z += e.speed * (dt/1000); // Enemies drive forward too
+                if (detectCollision3D(player, e)) {
+                    if (player.shield) {
+                        player.shield = false; updateHUD(); soundShieldDown(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
+                        createExplosion3D(e.x, e.y, e.z, e.color, 40, 30, 800);
+                        entities.push(new FloatingText3D(player.x, player.y+50, playerZ, "DEFLECTED!", "#0bf", 1.5));
+                        entities.splice(i, 1); i--; continue;
+                    } else { endGame(); }
                 }
-                collectibles.splice(i, 1); i--; continue;
+                if (e.z < cameraZ - 200) { entities.splice(i, 1); i--; addScore(10); }
+            } 
+            else if (e.type === 'gold' || e.type === 'shield' || e.type === 'magnet') {
+                // Magnet pull
+                if (e.type === 'gold' && player.magnetTime > 0) {
+                    let dx = player.x - e.x; let dz = playerZ - e.z; let dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < 800) { e.x += (dx / dist) * 30 * timeScale; e.z += (dz / dist) * 30 * timeScale; }
+                }
+                
+                if (detectCollision3D(player, e)) {
+                    if (e.type === 'gold') {
+                        combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
+                        soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 15, 400); 
+                        let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0'; 
+                        entities.push(new FloatingText3D(player.x, player.y+40, playerZ, `+${50 * multiplier}`, col, 1 + (multiplier*0.2))); 
+                        addScore(50 * multiplier); 
+                    } else if (e.type === 'shield') {
+                        soundShieldUp(); createExplosion3D(e.x, e.y, e.z, '#0bf', 20, 20, 500); 
+                        entities.push(new FloatingText3D(player.x, player.y+40, playerZ, "SHIELD UP", "#0bf", 1.2));
+                        player.shield = true; updateHUD(); addScore(10);
+                    } else if (e.type === 'magnet') {
+                        soundMagnetUp(); createExplosion3D(e.x, e.y, e.z, '#b0f', 20, 20, 500); 
+                        entities.push(new FloatingText3D(player.x, player.y+40, playerZ, "MAGNET!", "#b0f", 1.2));
+                        player.magnetTime = 10000; magnetBarContainer.style.display = 'block'; addScore(10);
+                    }
+                    entities.splice(i, 1); i--; continue;
+                }
+                if (e.z < cameraZ - 200) { if(e.type === 'gold') breakCombo(); entities.splice(i, 1); i--; }
             }
-            if (collectibles[i].y > canvas.height) { if(collectibles[i].type === 'gold') breakCombo(); collectibles.splice(i, 1); i--; }
+            else if (e.type === 'particle' || e.type === 'text') {
+                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); i--; }
+            }
         }
-
-        for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(dt); if (particles[i].life <= 0) particles.splice(i, 1); }
-        for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].update(dt); if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1); }
     }
 
-    function drawCar(x, y, w, h, color) {
-        ctx.shadowBlur = 15; ctx.shadowColor = color; ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
-        ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.strokeRect(x, y, w, h); ctx.shadowBlur = 0; 
-        ctx.fillStyle = color === '#0ff' ? '#fff' : '#ff0'; ctx.fillRect(x + 5, y + (color === '#0ff' ? 0 : h - 10), 8, 10); ctx.fillRect(x + w - 13, y + (color === '#0ff' ? 0 : h - 10), 8, 10);
-        ctx.fillStyle = '#0a0a1a'; ctx.fillRect(x + 5, y + 20, w - 10, h * 0.25); ctx.fillRect(x + 5, y + h - 20, w - 10, 10);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(x + 5, y + 20, w - 10, 5); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x + 10, y + 20 + (h*0.25), w - 20, h*0.3);
+    // --- RENDERING PIPELINE ---
+    
+    // Draws a classic pseudo-3D billboard box
+    function draw3DBox(x, y, z, w, h, color, isPlayer=false) {
+        let p = project3D(x, y, z, cameraX, cameraZ);
+        if(!p) return;
+
+        let sc = p.scale;
+        let drawW = w * sc; let drawH = h * sc;
+        
+        // Ground Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath(); ctx.ellipse(p.x, p.y + (10*sc), drawW*0.6, drawW*0.2, 0, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = color; ctx.shadowBlur = 15; ctx.shadowColor = color;
+        ctx.fillRect(p.x - drawW/2, p.y - drawH, drawW, drawH);
+        
+        // Inner detail lines
+        ctx.lineWidth = 1; ctx.strokeStyle = '#fff'; ctx.strokeRect(p.x - drawW/2, p.y - drawH, drawW, drawH); ctx.shadowBlur = 0;
+        
+        // Windows
+        ctx.fillStyle = '#050510'; ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.8, drawW*0.8, drawH*0.3);
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.8, drawW*0.8, drawH*0.05); // Glare
+
+        // Taillights
+        ctx.fillStyle = isPlayer ? '#fff' : '#ff0';
+        ctx.fillRect(p.x - drawW*0.4, p.y - drawH*0.2, drawW*0.2, drawH*0.1);
+        ctx.fillRect(p.x + drawW*0.2, p.y - drawH*0.2, drawW*0.2, drawH*0.1);
     }
 
-    function drawCollectible(c) {
-        ctx.save(); let hoverY = c.y + Math.sin(Date.now() / 150) * 3; ctx.translate(c.x + c.width/2, hoverY + c.height/2);
-        if (c.type === 'gold') {
-            ctx.rotate(Date.now() / 500); ctx.shadowBlur = 15; ctx.shadowColor = '#ff0'; ctx.fillStyle = '#ff0'; ctx.fillRect(-c.width/2, -c.height/2, c.width, c.height); ctx.fillStyle = '#fff'; ctx.fillRect(-c.width/4, -c.height/4, c.width/2, c.height/2);
-        } else if (c.type === 'shield') {
-            let pulse = Math.abs(Math.sin(Date.now() / 200)) * 5; ctx.shadowBlur = 20; ctx.shadowColor = '#0bf';
-            ctx.beginPath(); ctx.arc(0, 0, (c.width/2) + pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
-        } else if (c.type === 'magnet') {
-            ctx.rotate(-Date.now() / 400); ctx.shadowBlur = 15; ctx.shadowColor = '#b0f'; ctx.fillStyle = '#b0f'; 
-            ctx.beginPath(); ctx.moveTo(0, -c.height/2); ctx.lineTo(c.width/2, 0); ctx.lineTo(0, c.height/2); ctx.lineTo(-c.width/2, 0); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, c.width/4, 0, Math.PI*2); ctx.fill();
+    function draw3DCollectible(x, y, z, w, type) {
+        let p = project3D(x, y + Math.sin(Date.now()/150)*15, z, cameraX, cameraZ);
+        if(!p) return;
+        
+        let sc = p.scale; let drawW = w * sc;
+        ctx.save(); ctx.translate(p.x, p.y - drawW/2);
+
+        if (type === 'gold') {
+            ctx.rotate(Date.now() / 500); ctx.shadowBlur = 20; ctx.shadowColor = '#ff0'; 
+            ctx.fillStyle = '#ff0'; ctx.fillRect(-drawW/2, -drawW/2, drawW, drawW); 
+            ctx.fillStyle = '#fff'; ctx.fillRect(-drawW/4, -drawW/4, drawW/2, drawW/2);
+        } else if (type === 'shield') {
+            let pulse = Math.abs(Math.sin(Date.now() / 200)) * (5*sc); ctx.shadowBlur = 20; ctx.shadowColor = '#0bf';
+            ctx.beginPath(); ctx.arc(0, 0, (drawW/2) + pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill(); 
+            ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+        } else if (type === 'magnet') {
+            ctx.rotate(-Date.now() / 400); ctx.shadowBlur = 20; ctx.shadowColor = '#b0f'; ctx.fillStyle = '#b0f'; 
+            ctx.beginPath(); ctx.moveTo(0, -drawW/2); ctx.lineTo(drawW/2, 0); ctx.lineTo(0, drawW/2); ctx.lineTo(-drawW/2, 0); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, drawW/4, 0, Math.PI*2); ctx.fill();
         }
         ctx.restore();
     }
 
+    let cameraX = 0;
+
     function draw() {
-        ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Camera smoothly follows player X to create a banking effect
+        cameraX += (player.x * 0.5 - cameraX) * 0.1;
+
+        // Background
+        ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-        for(let c of chevrons) { ctx.beginPath(); ctx.moveTo(canvas.width/2 - 60, c.y - 30); ctx.lineTo(canvas.width/2, c.y); ctx.lineTo(canvas.width/2 + 60, c.y - 30); ctx.stroke(); }
+        // Sun & Skyline (Pan opposite to cameraX for parallax)
+        let panX = -cameraX * 0.2;
+        let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 80, 0, HORIZON_Y); 
+        sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
+        ctx.save(); ctx.shadowBlur = 40; ctx.shadowColor = '#f0f'; ctx.fillStyle = sunGrad; 
+        ctx.beginPath(); ctx.arc(canvas.width / 2 + panX, HORIZON_Y, 80, Math.PI, 0); ctx.fill(); ctx.restore();
+        
+        // Sun cutouts
+        ctx.fillStyle = '#050510'; for(let i=0; i<7; i++) { ctx.fillRect(canvas.width/2 + panX - 90, HORIZON_Y - 10 - (i*12), 180, i+1); }
 
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)'; for(let line of speedLines) ctx.fillRect(line.x, line.y, 2, line.len);
-        ctx.fillStyle = '#111'; ctx.fillRect(0, 0, 15, canvas.height); ctx.fillRect(canvas.width - 15, 0, 15, canvas.height); 
-        ctx.fillStyle = '#a00'; let offset = (Date.now() * currentSpeed * 0.1) % 40; for(let i = -40; i < canvas.height; i += 40) { ctx.fillRect(10, i + offset, 5, 20); ctx.fillRect(canvas.width - 15, i + offset, 5, 20); }
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.shadowBlur = 12; ctx.shadowColor = '#fff'; for (let i = 0; i < laneMarkers.length; i++) ctx.fillRect(canvas.width / 2 - 3, laneMarkers[i].y, 6, 50); ctx.shadowBlur = 0;
-
-        if (!isGameOver) {
-            if (player.magnetTime > 0) {
-                ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height * 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(187, 0, 255, 0.1)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(187, 0, 255, 0.5)'; ctx.stroke();
+        // Draw 3D Grid Floor
+        ctx.lineWidth = 1;
+        let zOffset = cameraZ % 100;
+        
+        // Horizontal moving lines
+        for (let z = 10; z < RENDER_DISTANCE; z += 100) {
+            let actualZ = cameraZ + z - zOffset;
+            let p1 = project3D(-1500, 0, actualZ, cameraX, cameraZ);
+            let p2 = project3D(1500, 0, actualZ, cameraX, cameraZ);
+            if(p1 && p2) {
+                let alpha = 1 - (z / RENDER_DISTANCE); // Fade in distance
+                ctx.strokeStyle = `rgba(0, 255, 255, ${alpha * 0.6})`;
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
             }
-            if (player.shield) { 
-                ctx.beginPath(); ctx.arc(player.x + player.width/2, player.y + player.height/2, player.height/1.5, 0, Math.PI * 2); 
-                ctx.fillStyle = 'rgba(0, 187, 255, 0.3)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke(); 
-            }
-            drawCar(player.x, player.y, player.width, player.height, player.color);
         }
-        for (let c of collectibles) drawCollectible(c); for (let o of obstacles) drawCar(o.x, o.y, o.width, o.height, o.color); for (let p of particles) p.draw(ctx); for (let f of floatingTexts) f.draw(ctx);
+        // Vertical perspective lines
+        for (let x = -1500; x <= 1500; x += 150) {
+            let p1 = project3D(x, 0, cameraZ + 10, cameraX, cameraZ);
+            let p2 = project3D(x, 0, cameraZ + RENDER_DISTANCE, cameraX, cameraZ);
+            if(p1 && p2) {
+                ctx.strokeStyle = `rgba(0, 255, 255, 0.4)`;
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            }
+        }
 
-        let topFade = ctx.createLinearGradient(0, 0, 0, 40); topFade.addColorStop(0, '#0a0a14'); topFade.addColorStop(1, 'rgba(10, 10, 20, 0)'); ctx.fillStyle = topFade; ctx.fillRect(0, 0, canvas.width, 40);
-        let botFade = ctx.createLinearGradient(0, canvas.height - 40, 0, canvas.height); botFade.addColorStop(0, 'rgba(10, 10, 20, 0)'); botFade.addColorStop(1, '#0a0a14'); ctx.fillStyle = botFade; ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+        // Draw Entities (Z-Sorted)
+        let renderList = [...entities];
+        if (!isGameOver) {
+            renderList.push({ type: 'player', x: player.x, y: player.y, z: cameraZ + player.zOffset, w: player.width, h: player.height, d: player.depth, color: player.color });
+        }
+        
+        // Sort furthest to closest (Painter's Algorithm)
+        renderList.sort((a, b) => b.z - a.z);
+
+        for (let e of renderList) {
+            if(e.z < cameraZ) continue; // Behind camera skip
+            
+            if (e.type === 'enemy' || e.type === 'player') {
+                if (e.type === 'player' && player.shield) {
+                    let p = project3D(e.x, e.y + 20, e.z, cameraX, cameraZ);
+                    if(p) {
+                        ctx.beginPath(); ctx.arc(p.x, p.y, e.w * p.scale, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(0, 187, 255, 0.2)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0bf'; ctx.stroke();
+                    }
+                }
+                draw3DBox(e.x, e.y, e.z, e.w, e.h, e.color, e.type === 'player');
+            } 
+            else if (e.type === 'gold' || e.type === 'shield' || e.type === 'magnet') {
+                draw3DCollectible(e.x, e.y, e.z, e.w, e.type);
+            }
+            else if (e.type === 'particle') {
+                let p = project3D(e.x, e.y, e.z, cameraX, cameraZ);
+                if(p) {
+                    ctx.globalAlpha = Math.max(0, e.life/e.maxLife); ctx.fillStyle = e.color; 
+                    let s = e.size * p.scale; ctx.fillRect(p.x - s/2, p.y - s/2, s, s); ctx.globalAlpha = 1.0;
+                }
+            }
+            else if (e.type === 'text') {
+                let p = project3D(e.x, e.y, e.z, cameraX, cameraZ);
+                if(p) {
+                    ctx.globalAlpha = Math.max(0, e.life/e.maxLife); ctx.fillStyle = e.color; 
+                    ctx.font = `bold ${16 * e.scale * p.scale}px Orbitron`; ctx.textAlign = 'center';
+                    ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillText(e.text, p.x, p.y);
+                    ctx.shadowBlur = 0; ctx.globalAlpha = 1.0; ctx.textAlign = 'left';
+                }
+            }
+        }
+
+        // Screen Borders Vignette
+        let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, 400);
+        grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.8)');
+        ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
     function gameLoop(timestamp) {
@@ -673,7 +736,8 @@
 
     function endGame() {
         isGameOver = true; isGameRunning = false; soundCrash(); triggerScreenFlash('rgba(255, 0, 0, 0.6)'); gameContainer.classList.add('shake'); 
-        createExplosion(player.x + player.width/2, player.y + player.height/2, '#0ff', 40, 20, 1000); createExplosion(player.x + player.width/2, player.y + player.height/2, '#fff', 20, 25, 800);
+        let pZ = cameraZ + player.zOffset;
+        createExplosion3D(player.x, player.y, pZ, '#0ff', 40, 40, 1000); createExplosion3D(player.x, player.y, pZ, '#fff', 20, 50, 800);
         finalScoreElement.innerText = score; hud.style.display = 'none';
         setTimeout(() => { gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50); }, 1200);
     }
