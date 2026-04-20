@@ -3,181 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Highway: Arcade Edition</title>
+    <title>Neon Highway: OutRun Edition</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
+        :root {
+            --cyan: #0ff;
+            --magenta: #f0f;
+            --yellow: #ff0;
+            --green: #0f0;
+            --dark: #030308;
+        }
+
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #050505; overflow: hidden; user-select: none;
+            background-color: var(--dark); overflow: hidden; user-select: none;
             font-family: 'Orbitron', sans-serif; color: white;
-            display: flex; justify-content: center; align-items: center;
+            -webkit-font-smoothing: antialiased; touch-action: none;
         }
 
-        /* PERFECT SCALING CONTAINER - Maintains 16:9 aspect ratio on any screen */
-        #game-wrapper {
-            position: relative;
-            width: 100vw;
-            height: 56.25vw; /* 16:9 aspect ratio */
-            max-height: 100vh;
-            max-width: 177.78vh; /* 16:9 aspect ratio */
-            background: #080812;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
-            overflow: hidden;
+        /* The Game World */
+        #game-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #050510; overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Effects */
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            40% { transform: translate(2px, -2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 2px) rotate(0deg); }
+            80% { transform: translate(-2px, -2px) rotate(1deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        #screen-flash {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 8; opacity: 0; transition: opacity 0.1s;
+        }
+        
+        #crt-filter {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+            background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 9; transition: opacity 0.3s;
+        }
+        .crt-off #crt-filter { opacity: 0; }
+
+        /* HTML UI - Always Crisp */
+        #hud-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; display: none;
+        }
+        
+        .hud-box {
+            position: absolute; padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            /* The canvas is locked at 1280x720 internally, the browser scales it here */
-        }
+        #hud-top-left { top: 20px; left: 20px; text-align: left; }
+        #hud-top-right { top: 20px; right: 20px; text-align: right; }
+        #hud-bottom-center { bottom: 30px; left: 50%; transform: translateX(-50%); text-align: center; min-width: 250px;}
 
-        /* Menus overlaying the wrapper */
+        .hud-label { font-size: 12px; color: var(--cyan); letter-spacing: 2px; opacity: 0.8; margin-bottom: 5px; }
+        .hud-value { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 0 0 10px var(--cyan); margin-bottom: 10px; }
+        
+        #speed-val { font-size: 36px; font-weight: 900; font-style: italic; color: var(--magenta); text-shadow: 0 0 15px var(--magenta); }
+        .combo-val { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); font-size: 20px; }
+        .shield-val { color: #f00; font-size: 14px; transition: 0.3s; }
+        .shield-val.active { color: #0bf; text-shadow: 0 0 10px #0bf; }
+
+        .power-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; display: none; margin-top: 10px;}
+        #power-bar-fill { width: 100%; height: 100%; background: var(--green); box-shadow: 0 0 10px var(--green); transition: width 0.1s linear;}
+
+        /* Menus */
         .screen-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 15, 0.9); backdrop-filter: blur(8px);
+            background: rgba(5, 5, 16, 0.85); backdrop-filter: blur(10px);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; z-index: 20; transition: opacity 0.3s;
+            pointer-events: auto; text-align: center; z-index: 20; transition: opacity 0.3s;
         }
-
         #game-over, #pause-screen { display: none; opacity: 0; }
 
-        h1 { margin: 0 0 15px 0; font-size: 5vw; font-weight: 900; color: #fff; letter-spacing: 4px; text-shadow: 0 0 20px #0ff; text-transform: uppercase;}
-        
-        .stats { background: rgba(0,0,0,0.6); padding: 2vh 3vw; border-radius: 15px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 20px; }
-        p { margin: 8px 0; font-size: 1.5vw; color: #ddd; }
-        
-        .highlight-gold { color: #ff0; font-weight: bold; }
+        h1 { margin: 0 0 15px 0; font-size: clamp(30px, 5vw, 60px); font-weight: 900; color: #fff; letter-spacing: 4px; }
+        .neon-text-blue { text-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan); }
+        .neon-text-red { text-shadow: 0 0 10px #f00, 0 0 20px #f00; }
+        .neon-text-magenta { text-shadow: 0 0 10px var(--magenta), 0 0 20px var(--magenta); }
+
+        .stats { background: rgba(0,0,0,0.6); padding: 20px 40px; border-radius: 15px; border: 1px solid rgba(0,255,255,0.3); margin-bottom: 25px; }
+        p { margin: 8px 0; font-size: 16px; color: #ddd; letter-spacing: 1px;}
+        .highlight-gold { color: var(--yellow); font-weight: bold; }
         .highlight-blue { color: #0bf; font-weight: bold; }
+        .highlight-green { color: var(--green); font-weight: bold; }
 
-        .btn-row { display: flex; gap: 15px; margin-top: 15px; justify-content: center; align-items: center; }
-        
         button.action-btn {
-            padding: 1.5vh 2vw; font-size: 1.5vw; font-family: inherit; font-weight: 700;
-            background: rgba(0, 255, 255, 0.1); color: #0ff; border: 2px solid #0ff;
-            border-radius: 8px; cursor: pointer; text-transform: uppercase;
-            transition: all 0.2s ease;
+            padding: 15px 35px; font-size: 18px; font-family: inherit; font-weight: 700;
+            background: rgba(0, 255, 255, 0.1); color: var(--cyan); border: 2px solid var(--cyan);
+            border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.2s ease; margin-top: 10px;
         }
-        button.action-btn:hover { background-color: #0ff; color: #000; transform: scale(1.05); }
+        button.action-btn:hover { background-color: var(--cyan); color: #000; transform: translateY(-2px); box-shadow: 0 0 20px var(--cyan);}
 
-        .controls-hint { font-size: 1.2vw; color: #aaa; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 1vh 2vw; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-row { display: flex; gap: 15px; margin-top: 15px; justify-content: center; }
+        .icon-btn {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,255,0.5); color: var(--cyan);
+            font-size: 12px; padding: 8px 15px; border-radius: 6px; cursor: pointer;
+            transition: 0.2s; font-family: 'Orbitron', sans-serif; pointer-events: auto; letter-spacing: 1px;
+        }
+        .icon-btn:hover { background: var(--cyan); color: #000; }
+        .icon-btn.disabled { color: #888; border-color: #555; }
+
+        #top-controls { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 25; pointer-events: auto;}
         
         #creator-credit {
-            position: absolute; bottom: 2%; right: 2%; z-index: 25;
-            background: rgba(0,0,0,0.8); border-left: 4px solid #0ff;
-            padding: 1vh 1vw; border-radius: 6px; font-size: 1.2vw; letter-spacing: 1px;
-            pointer-events: auto;
+            position: absolute; bottom: 20px; right: 20px; z-index: 25;
+            background: rgba(0,0,0,0.8); border-left: 4px solid var(--cyan);
+            padding: 10px 15px; border-radius: 6px; font-size: 12px; letter-spacing: 1px; pointer-events: auto;
         }
-        #creator-credit a { color: #f0f; text-decoration: none; font-weight: bold; transition: 0.3s;}
+        #creator-credit a { color: var(--magenta); text-decoration: none; font-weight: bold; transition: 0.3s;}
         #creator-credit a:hover { color: #fff; }
 
-        @media (min-width: 1200px) {
-            h1 { font-size: 60px; }
-            p { font-size: 18px; }
-            button.action-btn { font-size: 18px; padding: 15px 30px; }
-            .controls-hint { font-size: 14px; }
-            #creator-credit { font-size: 14px; }
-        }
+        .controls-hint { font-size: 12px; color: #aaa; margin-top: 25px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.8;}
     </style>
 </head>
 <body>
 
-<div id="game-wrapper">
-    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+<div id="game-container">
+    <div id="crt-filter"></div>
+    <div id="screen-flash"></div>
     
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="top-controls">
+        <button class="icon-btn" id="crt-toggle" onclick="toggleCRT()">CRT</button>
+        <button class="icon-btn" id="snd-toggle" onclick="toggleMute()">SND</button>
+        <button class="icon-btn" onclick="togglePause()" style="border-color: var(--magenta); color: var(--magenta);">II PAUSE</button>
+    </div>
+
     <div id="creator-credit">
         Dev: <a href="http://www.waliulawaltaha.com" target="_blank">Waliul Awal Taha</a>
     </div>
 
+    <div id="hud-layer">
+        <div id="hud-top-left" class="hud-box">
+            <div class="hud-label">SCORE</div>
+            <div class="hud-value" id="score-val">0</div>
+            <div class="hud-label">COMBO</div>
+            <div class="hud-value combo-val" id="combo-val">x1</div>
+        </div>
+
+        <div id="hud-top-right" class="hud-box">
+            <div class="hud-label">BEST RUN</div>
+            <div class="hud-value" style="color:var(--yellow);" id="high-score-val">0</div>
+            <div class="hud-label">SHIELD STATUS</div>
+            <div class="hud-value shield-val" id="shield-val">OFFLINE</div>
+        </div>
+
+        <div id="hud-bottom-center" class="hud-box">
+            <div class="hud-label">VELOCITY (KPH)</div>
+            <div class="hud-value" id="speed-val">120</div>
+            <div class="power-bar-bg" id="powerup-bg"><div id="power-bar-fill"></div></div>
+        </div>
+    </div>
+
     <div id="start-screen" class="screen-overlay">
-        <h1>NEON HIGHWAY</h1>
+        <h1 class="neon-text-blue">NEON HIGHWAY</h1>
         <div class="stats">
-            <p>Dodge traffic on the endless digital highway.</p>
-            <p>Collect <span class="highlight-gold">Gold Cubes</span> to boost your score.</p>
-            <p>Grab <span class="highlight-blue">Shields</span> to survive a crash.</p>
+            <p>Collect <span class="highlight-gold">Gold</span> for Multipliers.</p>
+            <p>Grab <span class="highlight-blue">Shields</span> to deflect crashes.</p>
+            <p>Hit <span class="highlight-green">Speed Pads</span> for Hyper-Drive!</p>
         </div>
         <button class="action-btn" onclick="initGame()">START ENGINE [ENTER]</button>
         <div class="controls-hint">
-            <strong>W / UP:</strong> Accelerate &nbsp;&bull;&nbsp; <strong>S / DOWN:</strong> Brake <br>
-            <strong>A / D:</strong> Steer Left/Right
+            <strong>W / UP:</strong> Gas &nbsp;&bull;&nbsp; <strong>S / DOWN:</strong> Brake <br>
+            <strong>A / D:</strong> Steer &nbsp;&bull;&nbsp; <strong>SPACE:</strong> Jump
         </div>
     </div>
 
     <div id="pause-screen" class="screen-overlay">
-        <h1 style="color: #f0f; text-shadow: 0 0 20px #f0f;">PAUSED</h1>
+        <h1 class="neon-text-magenta">PAUSED</h1>
         <button class="action-btn" onclick="togglePause()">RESUME [ESC]</button>
     </div>
 
     <div id="game-over" class="screen-overlay">
-        <h1 style="color: #f00; text-shadow: 0 0 20px #f00;">SYSTEM FAILURE</h1>
-        <p style="margin-top:10px; font-size: 20px; color: #aaa; letter-spacing: 2px;">FINAL SCORE</p>
-        <p><span id="final-score" style="color:#0ff; font-weight:900; font-size: 80px; text-shadow: 0 0 20px #0ff; margin: 0;">0</span></p>
-        
-        <div class="btn-row" style="margin-top: 30px;">
-            <button class="action-btn" onclick="shareScore()">SHARE SCORE</button>
-            <button class="action-btn" onclick="initGame()">REBOOT [ENTER]</button>
-        </div>
+        <h1 class="neon-text-red">SYSTEM FAILURE</h1>
+        <p style="margin-top:10px; margin-bottom: 0; font-size: 16px; color: #aaa; letter-spacing: 2px;">FINAL SCORE</p>
+        <p><span id="final-score" style="color:var(--cyan); font-weight:900; font-size: clamp(50px, 8vw, 80px); margin: 0; text-shadow: 0 0 20px var(--cyan);">0</span></p>
+        <button class="action-btn" onclick="initGame()" style="margin-top: 30px;">REBOOT SYSTEM [ENTER]</button>
     </div>
 </div>
 
 <script>
-    // --- CANVAS CONFIGURATION ---
+    // --- SETUP & RESOLUTION ---
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // alpha: false drastically improves FPS
+    const ctx = canvas.getContext('2d', { alpha: false }); 
     
-    // Internal fixed resolution for flawless scaling and 60FPS
-    const W = 1280;
-    const H = 720;
-
     // UI Elements
+    const gameContainer = document.getElementById('game-container');
+    const flashOverlay = document.getElementById('screen-flash');
+    const hudLayer = document.getElementById('hud-layer');
+    const scoreEl = document.getElementById('score-val');
+    const comboEl = document.getElementById('combo-val');
+    const shieldEl = document.getElementById('shield-val');
+    const speedEl = document.getElementById('speed-val');
+    const powerBg = document.getElementById('powerup-bg');
+    const powerFill = document.getElementById('power-bar-fill');
+    const highScoreEl = document.getElementById('high-score-val');
+    const finalScoreEl = document.getElementById('final-score');
+    
     const startScreen = document.getElementById('start-screen');
     const gameOverScreen = document.getElementById('game-over');
     const pauseScreen = document.getElementById('pause-screen');
-    const finalScoreElement = document.getElementById('final-score');
 
-    function shareScore() {
-        let url = window.location.href; if (url.includes('file://')) url = 'http://www.waliulawaltaha.com'; 
-        const text = `I just survived the Neon Highway and scored ${Math.floor(score)}! 🏎️✨ Can you beat my high score?`;
-        if (navigator.share) { navigator.share({ title: 'Neon Highway', text: text, url: url }).catch(err => {}); }
-        else { navigator.clipboard.writeText(`${text} Play here: ${url}`).then(() => alert("Copied to clipboard!")); }
+    let FOCAL_LENGTH = 600;
+    let HORIZON_Y = 0;
+    let dpr = window.devicePixelRatio || 1;
+    
+    function resizeCanvas() {
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.scale(dpr, dpr);
+        HORIZON_Y = window.innerHeight * 0.45; 
+        FOCAL_LENGTH = Math.max(400, window.innerWidth * 0.8); 
     }
+    window.addEventListener('resize', () => { resizeCanvas(); if(!isGameRunning && !isGameOver) draw(); });
+    resizeCanvas();
 
-    // --- 3D PROJECTION MATH ---
-    const CAMERA_Y = 300;     // Height of camera
-    const FOCAL_LENGTH = 800; // FOV
-    const HORIZON_Y = 250;    // Vanishing point Y
-    const RENDER_DIST = 6000;
+    // --- PREFERENCES ---
+    let savedHighScore = localStorage.getItem('neonHighScoreFinal') || 0;
+    highScoreEl.innerText = Math.floor(savedHighScore);
+    let crtEnabled = localStorage.getItem('neonCRT') !== 'false'; 
+    let soundEnabled = localStorage.getItem('neonSND') !== 'false'; 
 
-    function project3D(wX, wY, wZ, camX, camZ) {
+    function applyPreferences() {
+        gameContainer.classList.toggle('crt-off', !crtEnabled);
+        document.getElementById('crt-toggle').innerText = crtEnabled ? 'CRT: ON' : 'CRT: OFF';
+        document.getElementById('snd-toggle').innerText = soundEnabled ? 'SND: ON' : 'SND: OFF';
+    }
+    applyPreferences();
+    function toggleCRT() { crtEnabled = !crtEnabled; localStorage.setItem('neonCRT', crtEnabled); applyPreferences(); }
+    function toggleMute() { soundEnabled = !soundEnabled; localStorage.setItem('neonSND', soundEnabled); applyPreferences(); }
+
+    // --- 3D ENGINE MATH ---
+    const CAMERA_Y = 300;
+    const RENDER_DISTANCE = 5000; 
+
+    function project3D(wX, wY, wZ, camX, camY, camZ, fovMult = 1) {
         let dz = wZ - camZ;
-        if (dz <= 10) return null; // Behind camera
-        let scale = FOCAL_LENGTH / dz;
-        let px = (W / 2) + ((wX - camX) * scale);
-        let py = HORIZON_Y + ((CAMERA_Y - wY) * scale);
+        if (dz <= 10) return null; 
+        let scale = (FOCAL_LENGTH / fovMult) / dz;
+        let px = (window.innerWidth / 2) + ((wX - camX) * scale);
+        let py = HORIZON_Y + ((camY - wY) * scale);
         return { x: px, y: py, scale: scale, depth: dz };
     }
 
     // --- GAME VARIABLES ---
     let animationId; let lastTime = 0;
-    let score = 0; let highScore = localStorage.getItem('neonHighRes') || 0;
+    let score = 0; let level = 1; let combo = 0; let multiplier = 1;
+    let cameraZ = 0; let cameraX = 0; let currentFovMult = 1.0;
     
-    let cameraZ = 0; let cameraX = 0;
-    let baseSpeed = 2500; let currentSpeed = 0; let targetSpeed = baseSpeed;
+    // Pacing
+    let baseMinSpeed = 1800;
+    let baseMaxSpeed = 3500;
+    let targetSpeed = 2200;
+    let currentSpeed = 2200;
     
+    let spawnTimer = 0; let collectibleTimer = 0;
     let isGameOver = false; let isGameRunning = false; let isPaused = false;
-    let keys = { left: false, right: false, up: false, down: false };
+    let keys = { left: false, right: false, up: false, down: false, jump: false }; 
 
-    // The Player Car
+    // The Player: PUSH/PULL effect managed by zOffset
     let player = { 
-        x: 0, zOffset: 400, // Distance from camera
-        vx: 0, maxVx: 100, accel: 8, friction: 0.85, 
-        shield: false, width: 220, height: 100 
+        x: 0, y: 0, 
+        zOffset: 600, baseZOffset: 600, // Distance from camera
+        width: 180, height: 80, depth: 300, 
+        vx: 0, vy: 0, acceleration: 6.0, friction: 0.85, maxSpeed: 90, 
+        color: '#0ff', shield: false, boostTime: 0, isJumping: false 
     };
+    const GRAVITY = 3500; const JUMP_FORCE = 1400;
 
-    let entities = []; // Enemies and collectibles
+    let entities = []; 
+    let speedLines = [];
 
-    const ENEMY_COLORS = ['#f0f', '#f80', '#f00', '#fff'];
+    const ENEMY_TYPES = [
+        { w: 180, h: 90, d: 300, color: '#f0f', speedMult: 0.6 }, 
+        { w: 160, h: 80, d: 280, color: '#f80', speedMult: 0.8 },    
+        { w: 220, h: 110, d: 350, color: '#f00', speedMult: 0.4 }   
+    ];
+
+    // --- AUDIO ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function playTone(freq, type, duration, vol) {
+        if (!soundEnabled || !audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+    function soundStart() { playTone(400, 'square', 0.1, 0.1); setTimeout(() => playTone(600, 'square', 0.3, 0.1), 100); }
+    function soundCollect(pitchMod = 1) { playTone(880 * pitchMod, 'sine', 0.1, 0.1); setTimeout(() => playTone(1760 * pitchMod, 'sine', 0.2, 0.1), 80); }
+    function soundShieldUp() { playTone(300, 'sine', 0.1, 0.1); setTimeout(() => playTone(400, 'sine', 0.3, 0.1), 100); }
+    function soundBoostUp() { playTone(200, 'square', 0.2, 0.1); setTimeout(() => playTone(800, 'sawtooth', 0.5, 0.1), 200); }
+    function soundJump() { playTone(300, 'sine', 0.2, 0.1); }
+    function soundComboDrop() { playTone(150, 'square', 0.2, 0.15); }
+    function soundCrash() {
+        if (!soundEnabled || !audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+    }
 
     // --- CONTROLS ---
     window.addEventListener('keydown', (e) => { 
@@ -186,8 +327,11 @@
         if(k === 'arrowright' || k === 'd') keys.right = true;
         if(k === 'arrowup' || k === 'w') keys.up = true;
         if(k === 'arrowdown' || k === 's') keys.down = true;
+        if(k === ' ' && !player.isJumping && isGameRunning && !isPaused) { 
+            keys.jump = true; player.vy = JUMP_FORCE; player.isJumping = true; soundJump();
+        }
         if((k === 'escape' || k === 'p') && isGameRunning && !isGameOver) togglePause();
-        if(k === 'enter' && (!isGameRunning || isGameOver)) initGame();
+        if(k === 'enter') { if(!isGameRunning || isGameOver) initGame(); }
     });
     window.addEventListener('keyup', (e) => { 
         let k = e.key.toLowerCase();
@@ -195,313 +339,442 @@
         if(k === 'arrowright' || k === 'd') keys.right = false;
         if(k === 'arrowup' || k === 'w') keys.up = false;
         if(k === 'arrowdown' || k === 's') keys.down = false;
+        if(k === ' ') keys.jump = false;
     });
+    window.addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; if(isGameRunning && !isGameOver && !isPaused) togglePause(); });
 
-    // Touch Controls mapping for Left/Right halves of screen
-    window.addEventListener('pointerdown', (e) => {
+    function handlePointer(e, state) {
         if(!isGameRunning || isPaused) return;
-        let rect = canvas.getBoundingClientRect();
-        let x = e.clientX - rect.left;
-        if (x < rect.width / 2) { keys.left = true; keys.right = false; }
-        else { keys.right = true; keys.left = false; }
-    });
-    window.addEventListener('pointerup', () => { keys.left = false; keys.right = false; });
+        let x = e.clientX || (e.touches && e.touches[0].clientX);
+        if (x < window.innerWidth / 2) { keys.left = state; keys.right = false; }
+        else { keys.right = state; keys.left = false; }
+    }
+    canvas.addEventListener('pointerdown', (e) => { handlePointer(e, true); });
+    canvas.addEventListener('pointermove', (e) => { if(e.buttons > 0) handlePointer(e, true); });
+    canvas.addEventListener('pointerup', () => { keys.left = false; keys.right = false; });
 
-    // --- CORE LOGIC ---
+    // --- PARTICLES & TEXT ---
+    class Particle3D {
+        constructor(x, y, z, color, speed, life) {
+            this.x = x; this.y = y; this.z = z;
+            this.vx = (Math.random() - 0.5) * speed; this.vy = Math.random() * speed * 0.5; this.vz = (Math.random() - 0.5) * speed;
+            this.color = color; this.life = life; this.maxLife = life; this.type = 'particle'; this.size = Math.random()*15+5;
+        }
+        update(dt) { this.x += this.vx * (dt/16); this.y += this.vy * (dt/16); this.z += this.vz * (dt/16); this.life -= dt; }
+    }
+    class FloatingText3D {
+        constructor(x, y, z, text, color, scale=1) {
+            this.x = x; this.y = y; this.z = z; this.text = text; this.color = color; this.baseScale = scale; 
+            this.life = 800; this.maxLife = 800; this.type = 'text';
+        }
+        update(dt) { this.y += (dt/16) * 6; this.life -= dt; } 
+    }
+
+    function createExplosion3D(x, y, z, color, amount=20, speed=50, life=600) { 
+        for (let i = 0; i < amount; i++) entities.push(new Particle3D(x, y, z, color, speed, life)); 
+    }
+    function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
+    
+    function updateHUD() { 
+        if(player.shield) { shieldEl.innerText = "ONLINE"; shieldEl.classList.add('active'); } else { shieldEl.innerText = "OFFLINE"; shieldEl.classList.remove('active'); }
+        comboEl.innerText = `x${multiplier}`; if(multiplier > 1) comboEl.classList.add('active'); else comboEl.classList.remove('active');
+    }
+
+    function breakCombo() {
+        if(combo > 0) {
+            combo = 0; multiplier = 1; updateHUD(); soundComboDrop();
+            entities.push(new FloatingText3D(player.x, player.y + 150, cameraZ + player.zOffset, "COMBO BROKEN", "#f00", 1.5));
+        }
+    }
+
     function togglePause() {
         if (!isGameRunning || isGameOver) return;
         isPaused = !isPaused;
-        if (isPaused) { pauseScreen.style.display = 'flex'; pauseScreen.style.opacity = '1'; cancelAnimationFrame(animationId); } 
+        if (isPaused) { pauseScreen.style.display = 'flex'; setTimeout(() => { pauseScreen.style.opacity = '1'; }, 10); cancelAnimationFrame(animationId); } 
         else { pauseScreen.style.opacity = '0'; setTimeout(() => { pauseScreen.style.display = 'none'; }, 300); lastTime = performance.now(); animationId = requestAnimationFrame(gameLoop); }
     }
 
     function initGame() {
-        score = 0; cameraZ = 0; cameraX = 0;
-        currentSpeed = baseSpeed; targetSpeed = baseSpeed;
+        if(isGameRunning) return; 
+        initAudio(); soundStart();
+        score = 0; level = 1; combo = 0; multiplier = 1; 
+        baseMinSpeed = 1800; baseMaxSpeed = 3500;
+        currentSpeed = 2200; targetSpeed = 2200; cameraZ = 0; cameraX = 0; currentFovMult = 1.0;
+        spawnTimer = 0; collectibleTimer = 0; 
         isGameOver = false; isGameRunning = true; isPaused = false;
         
-        player.x = 0; player.vx = 0; player.shield = false;
-        entities = [];
+        entities = []; speedLines = [];
+        scoreEl.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
         
-        keys.left = keys.right = keys.up = keys.down = false;
+        player.x = 0; player.y = 0; player.vx = 0; player.vy = 0; player.isJumping = false;
+        player.shield = false; player.boostTime = 0; player.zOffset = player.baseZOffset;
         
+        updateHUD(); keys.left = keys.right = keys.up = keys.down = false; powerBg.style.display = 'none';
         startScreen.style.display = 'none'; gameOverScreen.style.display = 'none'; gameOverScreen.style.opacity = '0';
+        pauseScreen.style.display = 'none'; pauseScreen.style.opacity = '0'; hudLayer.style.display = 'block';
         
         lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
     }
 
-    function spawnEntity(zPos) {
-        // Highway has 3 distinct lanes: -1000, 0, 1000
-        let lanes = [-1200, 0, 1200];
-        let lane = lanes[Math.floor(Math.random() * lanes.length)];
-        
-        if (Math.random() > 0.2) {
-            // Spawn Enemy
-            let speed = currentSpeed * (Math.random() * 0.4 + 0.4); // Enemies move slower than player
-            let color = ENEMY_COLORS[Math.floor(Math.random() * ENEMY_COLORS.length)];
-            entities.push({ type: 'enemy', x: lane, z: zPos, w: 220, h: 100, speed: speed, color: color });
-        } else {
-            // Spawn Collectible
-            let type = Math.random() > 0.85 ? 'shield' : 'gold';
-            entities.push({ type: type, x: lane, z: zPos, w: 100, h: 100 });
+    function detectCollision3D(p, obj) {
+        let pZ = cameraZ + p.zOffset;
+        let hitXZ = Math.abs(p.x - obj.x) < (p.width/2 + obj.w/2 - 30) && Math.abs(pZ - obj.z) < (p.depth/2 + obj.d/2 - 40);
+        let hitY = (p.y < obj.h); // True if player is lower than the obstacle's height
+        return hitXZ && hitY;
+    }
+
+    function addScore(points) {
+        score += points; scoreEl.innerText = Math.floor(score);
+        if (score > savedHighScore) { savedHighScore = score; highScoreEl.innerText = Math.floor(savedHighScore); localStorage.setItem('neonHighScoreFinal', savedHighScore); }
+        if (score >= level * 500) {
+            level++; baseMinSpeed += 150; baseMaxSpeed += 150;
+            entities.push(new FloatingText3D(player.x, 200, cameraZ + 1200, `LEVEL ${level}`, "#f0f", 3));
         }
+    }
+    
+    function updateSpeedometer() { 
+        speedEl.innerText = Math.floor(currentSpeed / 10); 
     }
 
     function update(dt) {
-        if (isGameOver) return;
-        let timeScale = dt / 16.6; // Normalize to 60FPS
+        if (isGameOver) { 
+            for (let i = entities.length - 1; i >= 0; i--) { 
+                let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
+            } return; 
+        }
+        
+        let timeScale = dt / 16.6;
 
-        // --- PLAYER MOVEMENT ---
-        if (keys.left) player.vx -= player.accel * timeScale;
-        if (keys.right) player.vx += player.accel * timeScale;
+        // Player X Steering
+        if (keys.left) player.vx -= player.acceleration * timeScale;
+        if (keys.right) player.vx += player.acceleration * timeScale;
         player.vx *= Math.pow(player.friction, timeScale);
         player.x += player.vx * timeScale;
-        
-        // Road Bounds (-2000 to 2000 is asphalt)
-        if (player.x < -1800) { player.x = -1800; player.vx = 0; } 
-        if (player.x > 1800) { player.x = 1800; player.vx = 0; }
+        if (player.x < -2500) { player.x = -2500; player.vx = 0; } if (player.x > 2500) { player.x = 2500; player.vx = 0; }
 
-        // Acceleration & Braking
-        if (keys.up) targetSpeed = baseSpeed * 1.5;
-        else if (keys.down) targetSpeed = baseSpeed * 0.5;
-        else targetSpeed = baseSpeed;
+        // Player Y Jumping
+        if (player.isJumping) {
+            player.vy -= GRAVITY * (dt/1000);
+            player.y += player.vy * (dt/1000);
+            if (player.y <= 0) { player.y = 0; player.vy = 0; player.isJumping = false; }
+        }
+
+        // Speed & PUSH/PULL Logic
+        if (player.boostTime > 0) {
+            player.boostTime -= dt;
+            targetSpeed = baseMaxSpeed * 2.0;
+            currentFovMult += (1.8 - currentFovMult) * 0.1; // Warp FOV
+            powerFill.style.width = `${(player.boostTime / 3000) * 100}%`;
+            powerFill.style.background = 'var(--green)'; powerFill.style.boxShadow = '0 0 10px var(--green)';
+            
+            // Speed Lines Intense
+            if(Math.random() > 0.5) speedLines.push({ x: (Math.random()*4000)-2000, y: Math.random()*300, z: cameraZ + 1000, life: 200 });
+
+            if (player.boostTime <= 0) { powerBg.style.display = 'none'; }
+        } else {
+            currentFovMult += (1.0 - currentFovMult) * 0.1;
+            // Manual Acceleration
+            if (keys.up) targetSpeed = baseMaxSpeed;
+            else if (keys.down) targetSpeed = baseMinSpeed;
+            else targetSpeed = baseMinSpeed + ((baseMaxSpeed - baseMinSpeed) / 2.5); // Cruise
+        }
         
+        // Smoothly lerp current speed
         currentSpeed += (targetSpeed - currentSpeed) * 0.05 * timeScale;
-        
-        // Camera moves forward
-        cameraZ += currentSpeed * (dt/1000); 
-        let playerZ = cameraZ + player.zOffset;
+        updateSpeedometer();
 
-        // Score
-        score += (currentSpeed / 3000) * timeScale;
+        // Push/Pull car offset based on speed
+        let targetZOffset = player.baseZOffset + ((currentSpeed - baseMinSpeed) / (baseMaxSpeed * 2 - baseMinSpeed)) * 400;
+        player.zOffset += (targetZOffset - player.zOffset) * 0.05 * timeScale;
 
-        // --- ENTITY LOGIC ---
+        cameraZ += currentSpeed * (dt/1000); let playerZ = cameraZ + player.zOffset;
+
+        // Exhaust
+        if (Math.random() > 0.2 && player.boostTime <= 0 && keys.up) { 
+            entities.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0ff', 15, 300)); 
+            entities.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0ff', 15, 300)); 
+        } else if (player.boostTime > 0) {
+            entities.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0f0', 40, 200)); 
+            entities.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0f0', 40, 200)); 
+        }
+
+        // Add passive score based on speed
+        if (!player.isJumping) addScore((currentSpeed / 2000) * timeScale);
+
+        // Update Speedlines
+        for(let i=speedLines.length-1; i>=0; i--) {
+            speedLines[i].life -= dt;
+            speedLines[i].z -= currentSpeed * 2 * (dt/1000);
+            if(speedLines[i].life <= 0 || speedLines[i].z < cameraZ) speedLines.splice(i, 1);
+        }
+
+        // Spawners (3 Lanes)
+        spawnTimer += dt;
+        if (spawnTimer > Math.max(300, 1000 - (level*50))) {
+            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; 
+            let lanes = [-1200, 0, 1200]; let x = lanes[Math.floor(Math.random()*lanes.length)];
+            // Add some jitter so they aren't perfectly aligned
+            x += (Math.random() * 400) - 200;
+            entities.push({ type: 'enemy', x: x, y: 0, z: cameraZ + RENDER_DISTANCE, w: type.w, h: type.h, d: type.d, color: type.color, speed: currentSpeed * type.speedMult }); 
+            spawnTimer = 0;
+        }
+
+        collectibleTimer += dt;
+        if (collectibleTimer > 1000) {
+            if(Math.random() > 0.4) { 
+                let x = (Math.random() * 4000) - 2000; let rand = Math.random(); let cType = 'gold';
+                if(rand > 0.94) cType = 'boost'; else if(rand > 0.88) cType = 'shield'; 
+                entities.push({ type: cType, x: x, y: 60, z: cameraZ + RENDER_DISTANCE, w: 100, h: 100, d: 100 }); 
+            }
+            collectibleTimer = 0;
+        }
+
         // Cleanup behind camera
-        while (entities.length > 0 && entities[0].z < cameraZ) {
+        while (entities.length > 0 && entities[0].z < cameraZ && entities[0].type !== 'particle' && entities[0].type !== 'text') {
+            if(entities[0].type === 'gold') breakCombo();
             entities.shift();
         }
 
-        // Spawn ahead
-        let furthestZ = entities.length > 0 ? entities[entities.length-1].z : cameraZ;
-        if (furthestZ < cameraZ + RENDER_DIST) {
-            // Spawn intervals get tighter as score goes up
-            let gap = Math.max(800, 2000 - (score * 2));
-            spawnEntity(furthestZ + gap);
-        }
-
-        // Update & Collide
         for (let i = 0; i < entities.length; i++) {
             let e = entities[i];
             
             if (e.type === 'enemy') {
-                e.z += e.speed * (dt/1000);
-            }
-
-            // Simple 3D AABB Collision
-            let hitX = Math.abs(player.x - e.x) < (player.width + e.w) / 2;
-            let hitZ = Math.abs(playerZ - e.z) < 200; // Depth threshold
-
-            if (hitX && hitZ) {
-                if (e.type === 'enemy') {
-                    if (player.shield) {
-                        player.shield = false;
-                        entities.splice(i, 1); i--;
-                    } else {
-                        isGameOver = true;
-                        if (score > highScore) { highScore = score; localStorage.setItem('neonHighRes', highScore); }
-                        finalScoreElement.innerText = Math.floor(score);
-                        gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50);
+                e.z += e.speed * (dt/1000); 
+                if (detectCollision3D(player, e)) {
+                    if (player.boostTime > 0) {
+                        createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
+                        addScore(100); entities.splice(i, 1); i--; continue;
+                    } else if (player.shield) {
+                        player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
+                        createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
+                        entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
+                        entities.splice(i, 1); i--; continue;
+                    } else { endGame(); }
+                }
+            } 
+            else if (['gold', 'shield', 'boost'].includes(e.type)) {
+                // Gold pull (passive magnet)
+                if (e.type === 'gold') {
+                    let dx = player.x - e.x; let dz = playerZ - e.z; let dist = Math.sqrt(dx*dx + dz*dz);
+                    if (dist < 1500) { e.x += (dx / dist) * 60 * timeScale; e.z += (dz / dist) * 60 * timeScale; }
+                }
+                
+                if (detectCollision3D(player, e)) {
+                    if (e.type === 'gold') {
+                        combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
+                        soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 20, 300); 
+                        let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0'; 
+                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, `+${50 * multiplier}`, col, 1.2 + (multiplier*0.2))); 
+                        addScore(50 * multiplier); 
+                    } else if (e.type === 'shield') {
+                        soundShieldUp(); createExplosion3D(e.x, e.y, e.z, '#0bf', 25, 30, 400); 
+                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "SHIELD UP", "#0bf", 1.8));
+                        player.shield = true; updateHUD(); addScore(10);
+                    } else if (e.type === 'boost') {
+                        soundBoostUp(); createExplosion3D(e.x, e.y, e.z, '#0f0', 40, 40, 500);
+                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
+                        player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
                     }
-                } else if (e.type === 'gold') {
-                    score += 50;
-                    entities.splice(i, 1); i--;
-                } else if (e.type === 'shield') {
-                    player.shield = true;
-                    entities.splice(i, 1); i--;
+                    entities.splice(i, 1); i--; continue;
                 }
             }
+            else if (e.type === 'particle' || e.type === 'text') {
+                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); i--; }
+            }
         }
     }
 
-    // --- RENDERING ---
-    function drawCar(p, drawW, drawH, color, isPlayer=false, vx=0) {
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        
-        // Tilt for steering
-        ctx.rotate((vx / player.maxVx) * 0.2);
+    // --- RENDERING PIPELINE ---
+    function drawRoad(activeCamY) {
+        // Shorter segments = Faster visual movement
+        let segLen = 200; let startZ = Math.floor(cameraZ / segLen) * segLen;
+        let roadWidth = 4000; let centerLineWidth = 60; let rumbleWidth = 300;
 
-        // Tires
-        ctx.fillStyle = '#000';
-        ctx.fillRect(-drawW*0.45, -drawH*0.2, drawW*0.2, drawH*0.3); // Left
-        ctx.fillRect(drawW*0.25, -drawH*0.2, drawW*0.2, drawH*0.3);  // Right
+        ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-        // Chassis Base
-        ctx.fillStyle = '#222';
-        ctx.beginPath();
-        ctx.moveTo(-drawW*0.4, 0); ctx.lineTo(drawW*0.4, 0);
-        ctx.lineTo(drawW*0.5, -drawH*0.5); ctx.lineTo(-drawW*0.5, -drawH*0.5); ctx.fill();
-
-        // Chassis Top (Color)
-        let grad = ctx.createLinearGradient(0, -drawH, 0, 0);
-        grad.addColorStop(0, color); grad.addColorStop(1, '#333');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(-drawW*0.3, -drawH); ctx.lineTo(drawW*0.3, -drawH);
-        ctx.lineTo(drawW*0.5, -drawH*0.5); ctx.lineTo(-drawW*0.5, -drawH*0.5); ctx.fill();
-
-        // Windshield
-        ctx.fillStyle = '#050510';
-        ctx.beginPath();
-        ctx.moveTo(-drawW*0.25, -drawH*0.9); ctx.lineTo(drawW*0.25, -drawH*0.9);
-        ctx.lineTo(drawW*0.35, -drawH*0.5); ctx.lineTo(-drawW*0.35, -drawH*0.5); ctx.fill();
-
-        // Taillights
-        ctx.fillStyle = isPlayer ? '#fff' : '#f00';
-        ctx.fillRect(-drawW*0.4, -drawH*0.4, drawW*0.2, drawH*0.15);
-        ctx.fillRect(drawW*0.2, -drawH*0.4, drawW*0.2, drawH*0.15);
-
-        // Exhaust
-        ctx.fillStyle = '#0ff';
-        if (isPlayer && targetSpeed > baseSpeed) {
-            // Exhaust flame when accelerating
-            ctx.fillStyle = '#0f0';
-            ctx.fillRect(-drawW*0.2, 0, drawW*0.1, drawH*0.2);
-            ctx.fillRect(drawW*0.1, 0, drawW*0.1, drawH*0.2);
-        }
-
-        // Shield Bubble
-        if (isPlayer && player.shield) {
-            ctx.strokeStyle = '#0bf'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(0, -drawH/2, drawW*0.8, 0, Math.PI*2); ctx.stroke();
-            ctx.fillStyle = 'rgba(0, 187, 255, 0.2)'; ctx.fill();
-        }
-
-        ctx.restore();
-    }
-
-    function draw() {
-        // Camera Follows Player smoothly
-        cameraX += (player.x * 0.6 - cameraX) * 0.1;
-        
-        // 1. Clear & Sky
-        ctx.fillStyle = '#030308'; ctx.fillRect(0, 0, W, H);
-        
-        let panX = -cameraX * 0.1; // Parallax
-        let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 200, 0, HORIZON_Y); 
+        // Cyberpunk Sun & Horizon
+        let panX = -cameraX * 0.1;
+        let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 250, 0, HORIZON_Y); 
         sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
         ctx.fillStyle = sunGrad; 
-        ctx.beginPath(); ctx.arc(W/2 + panX, HORIZON_Y, 150, Math.PI, 0); ctx.fill(); 
-        
-        // Sun Cutouts
-        ctx.fillStyle = '#030308'; 
-        for(let i=0; i<8; i++) { ctx.fillRect(0, HORIZON_Y - 20 - (i*15), W, i+3); }
+        ctx.beginPath(); ctx.arc(window.innerWidth / 2 + panX, HORIZON_Y, 200, Math.PI, 0); ctx.fill(); 
+        ctx.fillStyle = '#050508'; for(let i=0; i<12; i++) { ctx.fillRect(0, HORIZON_Y - 25 - (i*20), window.innerWidth, i+4); }
 
-        // 2. Draw 3D Highway
-        let segLen = 300; let startZ = Math.floor(cameraZ / segLen) * segLen;
-        
-        // Draw back-to-front
-        for (let i = 20; i > 0; i--) {
+        // Road Polygons
+        for (let i = Math.floor(RENDER_DISTANCE/segLen); i > 0; i--) {
             let z1 = startZ + (i * segLen); let z2 = startZ + ((i - 1) * segLen);
-            let p1 = project3D(0, 0, z1, cameraX, cameraZ); 
-            let p2 = project3D(0, 0, z2, cameraX, cameraZ);
+            let p1 = project3D(0, 0, z1, cameraX, activeCamY, cameraZ, currentFovMult); 
+            let p2 = project3D(0, 0, z2, cameraX, activeCamY, cameraZ, currentFovMult);
             if (!p1 || !p2) continue;
 
-            let w1 = 3000 * p1.scale; let w2 = 3000 * p2.scale; // Total Road Width
+            let w1 = roadWidth * p1.scale; let w2 = roadWidth * p2.scale;
             let isDark = ((z1 / segLen) % 2 === 0);
 
-            // Ground/Grass Off-road
-            ctx.fillStyle = isDark ? '#05050a' : '#080812';
-            ctx.fillRect(0, p1.y, W, (p2.y - p1.y) + 1); 
+            // Ground
+            ctx.fillStyle = isDark ? '#080810' : '#0a0a14';
+            ctx.fillRect(0, p1.y, window.innerWidth, (p2.y - p1.y) + 1); 
 
             // Asphalt
             ctx.fillStyle = '#12121a';
             ctx.beginPath(); ctx.moveTo(p1.x - w1, p1.y); ctx.lineTo(p1.x + w1, p1.y);
             ctx.lineTo(p2.x + w2, p2.y); ctx.lineTo(p2.x - w2, p2.y); ctx.fill();
 
-            // Shoulders (Rumble Strips)
-            let r1 = 300 * p1.scale; let r2 = 300 * p2.scale;
+            // Rumble
+            let r1 = rumbleWidth * p1.scale; let r2 = rumbleWidth * p2.scale;
             ctx.fillStyle = isDark ? '#b00' : '#ddd';
-            // Left Rumble
-            ctx.beginPath(); ctx.moveTo(p1.x - w1, p1.y); ctx.lineTo(p1.x - w1 - r1, p1.y); 
-            ctx.lineTo(p2.x - w2 - r2, p2.y); ctx.lineTo(p2.x - w2, p2.y); ctx.fill();
-            // Right Rumble
-            ctx.beginPath(); ctx.moveTo(p1.x + w1, p1.y); ctx.lineTo(p1.x + w1 + r1, p1.y); 
-            ctx.lineTo(p2.x + w2 + r2, p2.y); ctx.lineTo(p2.x + w2, p2.y); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(p1.x - w1, p1.y); ctx.lineTo(p1.x - w1 - r1, p1.y); ctx.lineTo(p2.x - w2 - r2, p2.y); ctx.lineTo(p2.x - w2, p2.y); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(p1.x + w1, p1.y); ctx.lineTo(p1.x + w1 + r1, p1.y); ctx.lineTo(p2.x + w2 + r2, p2.y); ctx.lineTo(p2.x + w2, p2.y); ctx.fill();
 
-            // Lane Dividers (Dashed lines)
+            // 3 Lane Dividers
             if (isDark) {
-                ctx.fillStyle = '#fff';
-                let laneWidth = w1 / 1.5; // Divide road into lanes
-                let laneWidth2 = w2 / 1.5;
-                let lineW1 = 30 * p1.scale; let lineW2 = 30 * p2.scale;
+                let cCol = player.boostTime > 0 ? '#0f0' : '#0ff'; 
+                ctx.fillStyle = cCol;
+                let cW1 = centerLineWidth * p1.scale; let cW2 = centerLineWidth * p2.scale;
                 
                 // Left Line
-                ctx.beginPath(); ctx.moveTo(p1.x - laneWidth, p1.y); ctx.lineTo(p1.x - laneWidth + lineW1, p1.y);
-                ctx.lineTo(p2.x - laneWidth2 + lineW2, p2.y); ctx.lineTo(p2.x - laneWidth2, p2.y); ctx.fill();
+                let lx1 = p1.x - (w1 * 0.33); let lx2 = p2.x - (w2 * 0.33);
+                ctx.beginPath(); ctx.moveTo(lx1 - cW1, p1.y); ctx.lineTo(lx1 + cW1, p1.y); ctx.lineTo(lx2 + cW2, p2.y); ctx.lineTo(lx2 - cW2, p2.y); ctx.fill();
                 
                 // Right Line
-                ctx.beginPath(); ctx.moveTo(p1.x + laneWidth, p1.y); ctx.lineTo(p1.x + laneWidth - lineW1, p1.y);
-                ctx.lineTo(p2.x + laneWidth2 - lineW2, p2.y); ctx.lineTo(p2.x + laneWidth2, p2.y); ctx.fill();
+                let rx1 = p1.x + (w1 * 0.33); let rx2 = p2.x + (w2 * 0.33);
+                ctx.beginPath(); ctx.moveTo(rx1 - cW1, p1.y); ctx.lineTo(rx1 + cW1, p1.y); ctx.lineTo(rx2 + cW2, p2.y); ctx.lineTo(rx2 - cW2, p2.y); ctx.fill();
+            }
+        }
+    }
+
+    function drawCar(x, y, z, w, h, color, vx=0, isPlayer=false, activeCamY) {
+        let p = project3D(x, y, z, cameraX, activeCamY, cameraZ, currentFovMult); if(!p) return;
+        let sc = p.scale; let drawW = w * sc; let drawH = h * sc;
+        
+        ctx.save(); ctx.translate(p.x, p.y);
+        
+        // Tilt
+        let tilt = (vx / player.maxSpeed) * 0.25; 
+        ctx.rotate(tilt);
+
+        // Car Bobbing animation based on speed
+        let bob = isPlayer ? Math.sin(Date.now() / 40) * (currentSpeed/baseMaxSpeed) * 5 * sc : 0;
+        ctx.translate(0, bob);
+
+        // Shadow
+        if (y < 20) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.beginPath(); ctx.ellipse(0, 15*sc, drawW*0.6, drawW*0.2, 0, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-drawW*0.55, -drawH*0.4, drawW*0.25, drawH*0.45); 
+        ctx.fillRect(drawW*0.30, -drawH*0.4, drawW*0.25, drawH*0.45); 
+
+        let bodyGrad = ctx.createLinearGradient(0, -drawH, 0, 0);
+        bodyGrad.addColorStop(0, color); bodyGrad.addColorStop(1, '#222');
+        ctx.fillStyle = bodyGrad; 
+        
+        ctx.beginPath(); ctx.moveTo(-drawW*0.45, -drawH*0.6); ctx.lineTo(drawW*0.45, -drawH*0.6); 
+        ctx.lineTo(drawW*0.55, 0); ctx.lineTo(-drawW*0.55, 0); ctx.fill(); 
+        
+        ctx.fillStyle = '#050508';
+        ctx.beginPath(); ctx.moveTo(-drawW*0.35, -drawH); ctx.lineTo(drawW*0.35, -drawH);
+        ctx.lineTo(drawW*0.40, -drawH*0.6); ctx.lineTo(-drawW*0.40, -drawH*0.6); ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(-drawW*0.3, -drawH*0.9, drawW*0.6, drawH*0.1); 
+
+        ctx.fillStyle = isPlayer ? '#fff' : '#f00'; 
+        ctx.fillRect(-drawW*0.5, -drawH*0.35, drawW*0.35, drawH*0.15); 
+        ctx.fillRect(drawW*0.15, -drawH*0.35, drawW*0.35, drawH*0.15); 
+
+        // Exhaust
+        ctx.fillStyle = '#fff';
+        if (isPlayer && targetSpeed > baseMinSpeed + 200 && player.boostTime <= 0) ctx.fillStyle = '#0f0';
+        if (isPlayer && player.boostTime > 0) { ctx.fillStyle = '#0f0'; drawH *= 1.5; }
+        
+        ctx.fillRect(-drawW*0.25, -drawH*0.1, drawW*0.15, drawH*0.15);
+        ctx.fillRect(drawW*0.10, -drawH*0.1, drawW*0.15, drawH*0.15);
+
+        ctx.restore();
+    }
+
+    function draw3DCollectible(x, y, z, w, type, activeCamY) {
+        let p = project3D(x, y + Math.sin(Date.now()/150)*40, z, cameraX, activeCamY, cameraZ, currentFovMult); if(!p) return;
+        let sc = p.scale; let drawW = w * sc;
+        ctx.save(); ctx.translate(p.x, p.y - drawW/2);
+
+        if (type === 'gold') {
+            ctx.rotate(Date.now() / 500);  
+            ctx.fillStyle = '#ff0'; ctx.fillRect(-drawW/2, -drawW/2, drawW, drawW); 
+            ctx.fillStyle = '#fff'; ctx.fillRect(-drawW/4, -drawW/4, drawW/2, drawW/2);
+        } else if (type === 'shield') {
+            let pulse = Math.abs(Math.sin(Date.now() / 200)) * (10*sc); 
+            ctx.beginPath(); ctx.arc(0, 0, (drawW/2) + pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 187, 255, 0.6)'; ctx.fill(); 
+            ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+        } else if (type === 'boost') {
+            ctx.fillStyle = '#0f0'; 
+            ctx.beginPath(); ctx.moveTo(-drawW/2, drawW/4); ctx.lineTo(0, -drawW/2); ctx.lineTo(drawW/2, drawW/4);
+            ctx.lineTo(drawW/4, drawW/4); ctx.lineTo(0, -drawW/4); ctx.lineTo(-drawW/4, drawW/4); ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    function draw() {
+        let pX = player.x || 0; 
+        cameraX += (pX * 0.7 - cameraX) * 0.15; // Dynamic Camera follows car
+        
+        let speedRatio = currentSpeed / baseMaxSpeed;
+        let activeCamY = CAMERA_Y + Math.sin(Date.now() / 60 * speedRatio) * 10 * speedRatio; // Violent bob at high speed
+
+        drawRoad(activeCamY);
+
+        // Speed Lines
+        ctx.fillStyle = player.boostTime > 0 ? '#0f0' : 'rgba(0, 255, 255, 0.6)';
+        for(let s of speedLines) {
+            let p1 = project3D(s.x, s.y, s.z, cameraX, activeCamY, cameraZ, currentFovMult);
+            let p2 = project3D(s.x, s.y, s.z + 500, cameraX, activeCamY, cameraZ, currentFovMult);
+            if(p1 && p2) {
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                ctx.lineWidth = 3 * p1.scale; ctx.strokeStyle = ctx.fillStyle; ctx.stroke();
             }
         }
 
-        // 3. Draw Entities & Player
         let renderList = [...entities];
         if (!isGameOver && isGameRunning) {
-            renderList.push({ type: 'player', x: player.x, y: 0, z: cameraZ + player.zOffset, w: player.width, h: player.height, color: player.color, vx: player.vx });
+            renderList.push({ type: 'player', x: player.x, y: player.y, z: cameraZ + player.zOffset, w: player.width, h: player.height, d: player.depth, color: player.boostTime > 0 ? '#0f0' : player.color, vx: player.vx });
         }
         
-        // Z-Sort
         renderList.sort((a, b) => b.z - a.z);
 
         for (let e of renderList) {
-            let p = project3D(e.x, 0, e.z, cameraX, cameraZ);
-            if (!p) continue;
+            if(e.z < cameraZ) continue; 
             
-            let drawW = e.w * p.scale;
-            let drawH = e.h * p.scale;
-
             if (e.type === 'enemy' || e.type === 'player') {
-                drawCar(p, drawW, drawH, e.color, e.type==='player', e.vx || 0);
-            } else if (e.type === 'gold' || e.type === 'shield') {
-                // Bobbing animation for collectibles
-                let floatY = p.y - (Math.sin(Date.now()/200) * 20 * p.scale) - drawW;
-                
-                ctx.save(); ctx.translate(p.x, floatY);
-                if (e.type === 'gold') {
-                    ctx.rotate(Date.now() / 500); 
-                    ctx.fillStyle = '#ff0'; ctx.fillRect(-drawW/2, -drawW/2, drawW, drawW);
-                    ctx.fillStyle = '#fff'; ctx.fillRect(-drawW/4, -drawW/4, drawW/2, drawW/2);
-                } else {
-                    ctx.fillStyle = 'rgba(0, 187, 255, 0.8)';
-                    ctx.beginPath(); ctx.arc(0, 0, drawW/2, 0, Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+                if (e.type === 'player' && player.shield) {
+                    let p = project3D(e.x, e.y + 40, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                    if(p) {
+                        ctx.beginPath(); ctx.arc(p.x, p.y, e.w * 1.3 * p.scale, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(0, 187, 255, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#0bf'; ctx.stroke();
+                    }
                 }
-                ctx.restore();
+                drawSportsCar(e.x, e.y, e.z, e.w, e.h, e.color, e.vx || 0, e.type === 'player', activeCamY);
+            } 
+            else if (['gold', 'shield', 'boost'].includes(e.type)) { draw3DCollectible(e.x, e.y, e.z, e.w, e.type, activeCamY); }
+            else if (e.type === 'particle') {
+                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                if(p) {
+                    ctx.globalAlpha = Math.max(0, e.life/e.maxLife); ctx.fillStyle = e.color; 
+                    let s = e.size * p.scale; ctx.fillRect(p.x - s/2, p.y - s/2, s, s); ctx.globalAlpha = 1.0;
+                }
             }
-        }
-
-        // 4. Draw Canvas HUD (Scales perfectly and never misaligns)
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(0, 0, W, 60);
-
-        ctx.font = 'bold 24px Orbitron';
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#0ff';
-        ctx.fillText(`SCORE: ${Math.floor(score)}`, 20, 40);
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#f0f';
-        ctx.fillText(`SPEED: ${Math.floor(currentSpeed/10)} KPH`, W/2, 40);
-
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#ff0';
-        ctx.fillText(`HIGH: ${Math.floor(highScore)}`, W - 20, 40);
-        
-        if (player.shield) {
-            ctx.fillStyle = '#0bf';
-            ctx.fillText(`SHIELD ONLINE`, W - 20, 90);
+            else if (e.type === 'text') {
+                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                if(p) {
+                    // Strict font clamp so it never blocks the screen
+                    let fontSize = Math.max(12, Math.min(30, 20 * e.baseScale * p.scale)); 
+                    ctx.globalAlpha = Math.max(0, e.life/e.maxLife); ctx.fillStyle = e.color; 
+                    ctx.font = `bold ${fontSize}px Orbitron`; ctx.textAlign = 'center'; 
+                    // Manual shadow for performance
+                    ctx.fillText(e.text, p.x+2, p.y+2); ctx.fillStyle = '#fff'; ctx.fillText(e.text, p.x, p.y); 
+                    ctx.globalAlpha = 1.0; ctx.textAlign = 'left';
+                }
+            }
         }
     }
 
@@ -512,8 +785,17 @@
         update(dt); draw(); animationId = requestAnimationFrame(gameLoop);
     }
 
-    // Run first frame
-    requestAnimationFrame((t) => { lastTime = t; draw(); });
+    function endGame() {
+        isGameOver = true; isGameRunning = false; hudLayer.style.display = 'none';
+        soundCrash(); triggerScreenFlash('rgba(255, 0, 0, 0.8)'); gameContainer.classList.add('shake'); 
+        let pZ = cameraZ + player.zOffset;
+        createExplosion3D(player.x, player.y, pZ, '#0ff', 60, 100, 1500); createExplosion3D(player.x, player.y, pZ, '#fff', 50, 120, 1200);
+        finalScoreElement.innerText = Math.floor(score); 
+        setTimeout(() => { gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50); }, 1200);
+        requestAnimationFrame(() => { draw(); });
+    }
+
+    requestAnimationFrame((timestamp) => { lastTime = timestamp; resizeCanvas(); draw(); });
 </script>
 </body>
 </html>
