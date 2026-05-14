@@ -1,0 +1,4 @@
+127.0.0.1 - - [14/May/2026 18:19:48] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 18:19:48] "GET /js/collision.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 18:21:06] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 18:21:06] "GET /js/collision.js HTTP/1.1" 200 -
