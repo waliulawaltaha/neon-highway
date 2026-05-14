@@ -198,6 +198,7 @@
     </div>
 </div>
 
+<script src="js/collision.js"></script>
 <script>
     // --- SETUP & RESOLUTION ---
     const canvas = document.getElementById('gameCanvas');
@@ -416,12 +417,6 @@
         lastTime = performance.now(); cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
     }
 
-    function detectCollision3D(p, obj) {
-        let pZ = cameraZ + p.zOffset;
-        let hitXZ = Math.abs(p.x - obj.x) < (p.width/2 + obj.w/2 - 30) && Math.abs(pZ - obj.z) < (p.depth/2 + obj.d/2 - 40);
-        let hitY = (p.y < obj.h); // True if player is lower than the obstacle's height
-        return hitXZ && hitY;
-    }
 
     function addScore(points) {
         score += points; scoreEl.innerText = Math.floor(score);
@@ -540,7 +535,7 @@
             
             if (e.type === 'enemy') {
                 e.z += e.speed * (dt/1000); 
-                if (detectCollision3D(player, e)) {
+                if (detectCollision3D(player, e, cameraZ)) {
                     if (player.boostTime > 0) {
                         createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
                         addScore(100); entities.splice(i, 1); i--; continue;
@@ -559,7 +554,7 @@
                     if (dist < 1500) { e.x += (dx / dist) * 60 * timeScale; e.z += (dz / dist) * 60 * timeScale; }
                 }
                 
-                if (detectCollision3D(player, e)) {
+                if (detectCollision3D(player, e, cameraZ)) {
                     if (e.type === 'gold') {
                         combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
                         soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 20, 300); 
