@@ -431,6 +431,30 @@
         speedEl.innerText = Math.floor(currentSpeed / 10); 
     }
 
+    function spawnEnemies(dt) {
+        spawnTimer += dt;
+        if (spawnTimer > Math.max(300, 1000 - (level*50))) {
+            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+            let lanes = [-1200, 0, 1200]; let x = lanes[Math.floor(Math.random()*lanes.length)];
+            // Add some jitter so they aren't perfectly aligned
+            x += (Math.random() * 400) - 200;
+            entities.push({ type: 'enemy', x: x, y: 0, z: cameraZ + RENDER_DISTANCE, w: type.w, h: type.h, d: type.d, color: type.color, speed: currentSpeed * type.speedMult });
+            spawnTimer = 0;
+        }
+    }
+
+    function spawnCollectibles(dt) {
+        collectibleTimer += dt;
+        if (collectibleTimer > 1000) {
+            if(Math.random() > 0.4) {
+                let x = (Math.random() * 4000) - 2000; let rand = Math.random(); let cType = 'gold';
+                if(rand > 0.94) cType = 'boost'; else if(rand > 0.88) cType = 'shield';
+                entities.push({ type: cType, x: x, y: 60, z: cameraZ + RENDER_DISTANCE, w: 100, h: 100, d: 100 });
+            }
+            collectibleTimer = 0;
+        }
+    }
+
     function update(dt) {
         if (isGameOver) { 
             for (let i = entities.length - 1; i >= 0; i--) { 
@@ -504,25 +528,8 @@
         }
 
         // Spawners (3 Lanes)
-        spawnTimer += dt;
-        if (spawnTimer > Math.max(300, 1000 - (level*50))) {
-            let type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)]; 
-            let lanes = [-1200, 0, 1200]; let x = lanes[Math.floor(Math.random()*lanes.length)];
-            // Add some jitter so they aren't perfectly aligned
-            x += (Math.random() * 400) - 200;
-            entities.push({ type: 'enemy', x: x, y: 0, z: cameraZ + RENDER_DISTANCE, w: type.w, h: type.h, d: type.d, color: type.color, speed: currentSpeed * type.speedMult }); 
-            spawnTimer = 0;
-        }
-
-        collectibleTimer += dt;
-        if (collectibleTimer > 1000) {
-            if(Math.random() > 0.4) { 
-                let x = (Math.random() * 4000) - 2000; let rand = Math.random(); let cType = 'gold';
-                if(rand > 0.94) cType = 'boost'; else if(rand > 0.88) cType = 'shield'; 
-                entities.push({ type: cType, x: x, y: 60, z: cameraZ + RENDER_DISTANCE, w: 100, h: 100, d: 100 }); 
-            }
-            collectibleTimer = 0;
-        }
+        spawnEnemies(dt);
+        spawnCollectibles(dt);
 
         // Cleanup behind camera
         let cleanupCount = 0;
