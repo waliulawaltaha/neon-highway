@@ -79,7 +79,7 @@
         .shield-val.active { color: #0bf; text-shadow: 0 0 10px #0bf; }
 
         .power-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; display: none; margin-top: 10px;}
-        #power-bar-fill { width: 100%; height: 100%; background: var(--green); box-shadow: 0 0 10px var(--green); transition: width 0.1s linear;}
+        #power-bar-fill { width: 100%; height: 100%; background: var(--green); box-shadow: 0 0 10px var(--green); transform-origin: left; transform: scaleX(1); will-change: transform;}
 
         /* Menus */
         .screen-overlay {
@@ -128,7 +128,9 @@
         #creator-credit a { color: var(--magenta); text-decoration: none; font-weight: bold; transition: 0.3s;}
         #creator-credit a:hover { color: #fff; }
 
-        .controls-hint { font-size: 12px; color: #aaa; margin-top: 25px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.8;}
+        .controls-hint { font-size: 14px; color: #ddd; margin-top: 30px; background: rgba(0,0,0,0.7); padding: 15px 25px; border-radius: 10px; border: 1px solid rgba(0,255,255,0.2); line-height: 2.0; text-align: left; display: inline-block;}
+        .controls-hint strong { color: var(--cyan); }
+        .hint-divider { border-bottom: 1px dashed rgba(255,255,255,0.2); margin: 8px 0; }
     </style>
 </head>
 <body>
@@ -180,8 +182,9 @@
         </div>
         <button class="action-btn" onclick="initGame()">START ENGINE [ENTER]</button>
         <div class="controls-hint">
-            <strong>W / UP:</strong> Gas &nbsp;&bull;&nbsp; <strong>S / DOWN:</strong> Brake <br>
-            <strong>A / D:</strong> Steer &nbsp;&bull;&nbsp; <strong>SPACE:</strong> Jump
+            <strong>KEYBOARD:</strong> Arrows / WASD to Drive &nbsp;&bull;&nbsp; SPACE to Jump<br>
+            <div class="hint-divider"></div>
+            <strong>TOUCH / MOUSE:</strong> Press Left/Right side to Steer &nbsp;&bull;&nbsp; Swipe Up to Jump
         </div>
     </div>
 
@@ -263,7 +266,7 @@
     }
 
     // --- GAME VARIABLES ---
-    let animationId; let lastTime = 0;
+    let animationId; let lastTime = 0; let lastUITime = 0;
     let score = 0; let level = 1; let combo = 0; let multiplier = 1;
     let cameraZ = 0; let cameraX = 0; let currentFovMult = 1.0;
     
@@ -343,15 +346,45 @@
     });
     window.addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; if(isGameRunning && !isGameOver && !isPaused) togglePause(); });
 
-    function handlePointer(e, state) {
+    let touchStartY = 0;
+
+    function handlePointer(e, state, isMove=false) {
         if(!isGameRunning || isPaused) return;
-        let x = e.clientX || (e.touches && e.touches[0].clientX);
-        if (x < window.innerWidth / 2) { keys.left = state; keys.right = false; }
-        else { keys.right = state; keys.left = false; }
+
+        let x = e.clientX;
+        let y = e.clientY;
+
+        // Touch support
+        if (e.touches && e.touches.length > 0) {
+            x = e.touches[0].clientX;
+            y = e.touches[0].clientY;
+        }
+
+        // Swipe up to jump detection
+        if (!isMove && state) {
+            touchStartY = y;
+        } else if (isMove && state && touchStartY > 0) {
+            if (touchStartY - y > 50 && !player.isJumping) { // Swipe threshold
+                keys.jump = true; player.vy = JUMP_FORCE; player.isJumping = true; soundJump();
+                touchStartY = 0; // reset
+            }
+        }
+
+        if (state) {
+            if (x < window.innerWidth / 2) { keys.left = true; keys.right = false; }
+            else { keys.right = true; keys.left = false; }
+        } else {
+            keys.left = false; keys.right = false;
+        }
     }
-    canvas.addEventListener('pointerdown', (e) => { handlePointer(e, true); });
-    canvas.addEventListener('pointermove', (e) => { if(e.buttons > 0) handlePointer(e, true); });
-    canvas.addEventListener('pointerup', () => { keys.left = false; keys.right = false; });
+
+    canvas.addEventListener('touchstart', (e) => { handlePointer(e, true); }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handlePointer(e, true, true); }, {passive: false});
+    canvas.addEventListener('touchend', (e) => { handlePointer(e, false); touchStartY = 0; });
+
+    canvas.addEventListener('mousedown', (e) => { handlePointer(e, true); });
+    canvas.addEventListener('mousemove', (e) => { if(e.buttons > 0) handlePointer(e, true, true); });
+    canvas.addEventListener('mouseup', (e) => { handlePointer(e, false); touchStartY = 0;});
 
     // --- PARTICLES & TEXT ---
     class Particle3D {
@@ -404,7 +437,7 @@
         isGameOver = false; isGameRunning = true; isPaused = false;
         
         entities = []; speedLines = [];
-        scoreEl.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
+        scoreEl.innerText = score; speedEl.innerText = Math.floor(currentSpeed / 10); gameContainer.classList.remove('shake');
         
         player.x = 0; player.y = 0; player.vx = 0; player.vy = 0; player.isJumping = false;
         player.shield = false; player.boostTime = 0; player.zOffset = player.baseZOffset;
@@ -424,19 +457,28 @@
     }
 
     function addScore(points) {
-        score += points; scoreEl.innerText = Math.floor(score);
-        if (score > savedHighScore) { savedHighScore = score; highScoreEl.innerText = Math.floor(savedHighScore); localStorage.setItem('neonHighScoreFinal', savedHighScore); }
+        score += points;
+        if (score > savedHighScore) { savedHighScore = score; localStorage.setItem('neonHighScoreFinal', savedHighScore); }
         if (score >= level * 500) {
             level++; baseMinSpeed += 150; baseMaxSpeed += 150;
             entities.push(new FloatingText3D(player.x, 200, cameraZ + 1200, `LEVEL ${level}`, "#f0f", 3));
         }
     }
     
-    function updateSpeedometer() { 
-        speedEl.innerText = Math.floor(currentSpeed / 10); 
+    function updateUI(timestamp) {
+        if (timestamp - lastUITime > 50) { // ~20fps UI updates
+            scoreEl.innerText = Math.floor(score);
+            highScoreEl.innerText = Math.floor(savedHighScore);
+            speedEl.innerText = Math.floor(currentSpeed / 10);
+
+            if (player.boostTime > 0) {
+                powerFill.style.transform = `scaleX(${player.boostTime / 3000})`;
+            }
+            lastUITime = timestamp;
+        }
     }
 
-    function update(dt) {
+    function update(dt, timestamp) {
         if (isGameOver) { 
             for (let i = entities.length - 1; i >= 0; i--) { 
                 let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
@@ -464,8 +506,6 @@
             player.boostTime -= dt;
             targetSpeed = baseMaxSpeed * 2.0;
             currentFovMult += (1.8 - currentFovMult) * 0.1; // Warp FOV
-            powerFill.style.width = `${(player.boostTime / 3000) * 100}%`;
-            powerFill.style.background = 'var(--green)'; powerFill.style.boxShadow = '0 0 10px var(--green)';
             
             // Speed Lines Intense
             if(Math.random() > 0.5) speedLines.push({ x: (Math.random()*4000)-2000, y: Math.random()*300, z: cameraZ + 1000, life: 200 });
@@ -481,7 +521,6 @@
         
         // Smoothly lerp current speed
         currentSpeed += (targetSpeed - currentSpeed) * 0.05 * timeScale;
-        updateSpeedometer();
 
         // Push/Pull car offset based on speed
         let targetZOffset = player.baseZOffset + ((currentSpeed - baseMinSpeed) / (baseMaxSpeed * 2 - baseMinSpeed)) * 400;
@@ -529,26 +568,28 @@
             collectibleTimer = 0;
         }
 
-        // Cleanup behind camera
-        while (entities.length > 0 && entities[0].z < cameraZ && entities[0].type !== 'particle' && entities[0].type !== 'text') {
-            if(entities[0].type === 'gold') breakCombo();
-            entities.shift();
-        }
-
-        for (let i = 0; i < entities.length; i++) {
+        // Update entities backwards for safe removal
+        for (let i = entities.length - 1; i >= 0; i--) {
             let e = entities[i];
             
+            // Out of bounds cleanup
+            if (e.z < cameraZ && e.type !== 'particle' && e.type !== 'text') {
+                if (e.type === 'gold') breakCombo();
+                entities.splice(i, 1);
+                continue;
+            }
+
             if (e.type === 'enemy') {
                 e.z += e.speed * (dt/1000); 
                 if (detectCollision3D(player, e)) {
                     if (player.boostTime > 0) {
                         createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
-                        addScore(100); entities.splice(i, 1); i--; continue;
+                        addScore(100); entities.splice(i, 1); continue;
                     } else if (player.shield) {
                         player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
                         createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
                         entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
-                        entities.splice(i, 1); i--; continue;
+                        entities.splice(i, 1); continue;
                     } else { endGame(); }
                 }
             } 
@@ -575,11 +616,11 @@
                         entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
                         player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
                     }
-                    entities.splice(i, 1); i--; continue;
+                    entities.splice(i, 1); continue;
                 }
             }
             else if (e.type === 'particle' || e.type === 'text') {
-                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); i--; }
+                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); }
             }
         }
     }
@@ -782,7 +823,7 @@
         if (isPaused) return; 
         if (!isGameRunning) { draw(); return; } 
         let dt = timestamp - lastTime; lastTime = timestamp; if (dt > 100) dt = 16.6; 
-        update(dt); draw(); animationId = requestAnimationFrame(gameLoop);
+        update(dt, timestamp); updateUI(timestamp); draw(); animationId = requestAnimationFrame(gameLoop);
     }
 
     function endGame() {
