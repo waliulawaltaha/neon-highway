@@ -222,7 +222,7 @@
     const pauseScreen = document.getElementById('pause-screen');
 
     let FOCAL_LENGTH = 600;
-    let HORIZON_Y = 0;
+    let HORIZON_Y = 0; let cachedSunGrad = null;
     let dpr = window.devicePixelRatio || 1;
     
     function resizeCanvas() {
@@ -231,6 +231,7 @@
         ctx.scale(dpr, dpr);
         HORIZON_Y = window.innerHeight * 0.45; 
         FOCAL_LENGTH = Math.max(400, window.innerWidth * 0.8); 
+        cachedSunGrad = null; // Invalidate cached gradient on resize
     }
     window.addEventListener('resize', () => { resizeCanvas(); if(!isGameRunning && !isGameOver) draw(); });
     resizeCanvas();
@@ -591,9 +592,11 @@
 
         // Cyberpunk Sun & Horizon
         let panX = -cameraX * 0.1;
-        let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 250, 0, HORIZON_Y); 
-        sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
-        ctx.fillStyle = sunGrad; 
+        if (!cachedSunGrad) {
+            cachedSunGrad = ctx.createLinearGradient(0, HORIZON_Y - 250, 0, HORIZON_Y);
+            cachedSunGrad.addColorStop(0, '#f0f'); cachedSunGrad.addColorStop(1, '#ff0');
+        }
+        ctx.fillStyle = cachedSunGrad;
         ctx.beginPath(); ctx.arc(window.innerWidth / 2 + panX, HORIZON_Y, 200, Math.PI, 0); ctx.fill(); 
         ctx.fillStyle = '#050508'; for(let i=0; i<12; i++) { ctx.fillRect(0, HORIZON_Y - 25 - (i*20), window.innerWidth, i+4); }
 
