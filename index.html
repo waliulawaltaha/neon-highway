@@ -431,6 +431,42 @@
         speedEl.innerText = Math.floor(currentSpeed / 10); 
     }
 
+    function handleCollision(e, playerZ) {
+        if (e.type === 'enemy') {
+            if (player.boostTime > 0) {
+                createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
+                addScore(100);
+                return true;
+            } else if (player.shield) {
+                player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
+                createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
+                entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
+                return true;
+            } else {
+                endGame();
+                return false;
+            }
+        } else if (e.type === 'gold') {
+            combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
+            soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 20, 300);
+            let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0';
+            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, `+${50 * multiplier}`, col, 1.2 + (multiplier*0.2)));
+            addScore(50 * multiplier);
+            return true;
+        } else if (e.type === 'shield') {
+            soundShieldUp(); createExplosion3D(e.x, e.y, e.z, '#0bf', 25, 30, 400);
+            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "SHIELD UP", "#0bf", 1.8));
+            player.shield = true; updateHUD(); addScore(10);
+            return true;
+        } else if (e.type === 'boost') {
+            soundBoostUp(); createExplosion3D(e.x, e.y, e.z, '#0f0', 40, 40, 500);
+            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
+            player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
+            return true;
+        }
+        return false;
+    }
+
     function update(dt) {
         if (isGameOver) { 
             for (let i = entities.length - 1; i >= 0; i--) { 
@@ -538,15 +574,9 @@
             if (e.type === 'enemy') {
                 e.z += e.speed * (dt/1000); 
                 if (detectCollision3D(player, e, cameraZ)) {
-                    if (player.boostTime > 0) {
-                        createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
-                        addScore(100); entities.splice(i, 1); i--; continue;
-                    } else if (player.shield) {
-                        player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
-                        createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
-                        entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
+                    if (handleCollision(e, playerZ)) {
                         entities.splice(i, 1); i--; continue;
-                    } else { endGame(); }
+                    }
                 }
             } 
             else if (['gold', 'shield', 'boost'].includes(e.type)) {
@@ -557,22 +587,9 @@
                 }
                 
                 if (detectCollision3D(player, e, cameraZ)) {
-                    if (e.type === 'gold') {
-                        combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
-                        soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 20, 300); 
-                        let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0'; 
-                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, `+${50 * multiplier}`, col, 1.2 + (multiplier*0.2))); 
-                        addScore(50 * multiplier); 
-                    } else if (e.type === 'shield') {
-                        soundShieldUp(); createExplosion3D(e.x, e.y, e.z, '#0bf', 25, 30, 400); 
-                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "SHIELD UP", "#0bf", 1.8));
-                        player.shield = true; updateHUD(); addScore(10);
-                    } else if (e.type === 'boost') {
-                        soundBoostUp(); createExplosion3D(e.x, e.y, e.z, '#0f0', 40, 40, 500);
-                        entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
-                        player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
+                    if (handleCollision(e, playerZ)) {
+                        entities.splice(i, 1); i--; continue;
                     }
-                    entities.splice(i, 1); i--; continue;
                 }
             }
             else if (e.type === 'particle' || e.type === 'text') {
