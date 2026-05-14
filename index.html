@@ -198,6 +198,7 @@
     </div>
 </div>
 
+<script src="js/projection.js"></script>
 <script src="js/collision.js"></script>
 <script>
     // --- SETUP & RESOLUTION ---
@@ -253,15 +254,6 @@
     // --- 3D ENGINE MATH ---
     const CAMERA_Y = 300;
     const RENDER_DISTANCE = 5000; 
-
-    function project3D(wX, wY, wZ, camX, camY, camZ, fovMult = 1) {
-        let dz = wZ - camZ;
-        if (dz <= 10) return null; 
-        let scale = (FOCAL_LENGTH / fovMult) / dz;
-        let px = (window.innerWidth / 2) + ((wX - camX) * scale);
-        let py = HORIZON_Y + ((camY - wY) * scale);
-        return { x: px, y: py, scale: scale, depth: dz };
-    }
 
     // --- GAME VARIABLES ---
     let animationId; let lastTime = 0;
@@ -600,8 +592,8 @@
         // Road Polygons
         for (let i = Math.floor(RENDER_DISTANCE/segLen); i > 0; i--) {
             let z1 = startZ + (i * segLen); let z2 = startZ + ((i - 1) * segLen);
-            let p1 = project3D(0, 0, z1, cameraX, activeCamY, cameraZ, currentFovMult); 
-            let p2 = project3D(0, 0, z2, cameraX, activeCamY, cameraZ, currentFovMult);
+            let p1 = project3D(0, 0, z1, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
+            let p2 = project3D(0, 0, z2, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
             if (!p1 || !p2) continue;
 
             let w1 = roadWidth * p1.scale; let w2 = roadWidth * p2.scale;
@@ -640,7 +632,7 @@
     }
 
     function drawCar(x, y, z, w, h, color, vx=0, isPlayer=false, activeCamY) {
-        let p = project3D(x, y, z, cameraX, activeCamY, cameraZ, currentFovMult); if(!p) return;
+        let p = project3D(x, y, z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y); if(!p) return;
         let sc = p.scale; let drawW = w * sc; let drawH = h * sc;
         
         ctx.save(); ctx.translate(p.x, p.y);
@@ -692,7 +684,7 @@
     }
 
     function draw3DCollectible(x, y, z, w, type, activeCamY) {
-        let p = project3D(x, y + Math.sin(Date.now()/150)*40, z, cameraX, activeCamY, cameraZ, currentFovMult); if(!p) return;
+        let p = project3D(x, y + Math.sin(Date.now()/150)*40, z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y); if(!p) return;
         let sc = p.scale; let drawW = w * sc;
         ctx.save(); ctx.translate(p.x, p.y - drawW/2);
 
@@ -724,8 +716,8 @@
         // Speed Lines
         ctx.fillStyle = player.boostTime > 0 ? '#0f0' : 'rgba(0, 255, 255, 0.6)';
         for(let s of speedLines) {
-            let p1 = project3D(s.x, s.y, s.z, cameraX, activeCamY, cameraZ, currentFovMult);
-            let p2 = project3D(s.x, s.y, s.z + 500, cameraX, activeCamY, cameraZ, currentFovMult);
+            let p1 = project3D(s.x, s.y, s.z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
+            let p2 = project3D(s.x, s.y, s.z + 500, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
             if(p1 && p2) {
                 ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
                 ctx.lineWidth = 3 * p1.scale; ctx.strokeStyle = ctx.fillStyle; ctx.stroke();
@@ -744,7 +736,7 @@
             
             if (e.type === 'enemy' || e.type === 'player') {
                 if (e.type === 'player' && player.shield) {
-                    let p = project3D(e.x, e.y + 40, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                    let p = project3D(e.x, e.y + 40, e.z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
                     if(p) {
                         ctx.beginPath(); ctx.arc(p.x, p.y, e.w * 1.3 * p.scale, 0, Math.PI * 2);
                         ctx.fillStyle = 'rgba(0, 187, 255, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#0bf'; ctx.stroke();
@@ -754,14 +746,14 @@
             } 
             else if (['gold', 'shield', 'boost'].includes(e.type)) { draw3DCollectible(e.x, e.y, e.z, e.w, e.type, activeCamY); }
             else if (e.type === 'particle') {
-                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
                 if(p) {
                     ctx.globalAlpha = Math.max(0, e.life/e.maxLife); ctx.fillStyle = e.color; 
                     let s = e.size * p.scale; ctx.fillRect(p.x - s/2, p.y - s/2, s, s); ctx.globalAlpha = 1.0;
                 }
             }
             else if (e.type === 'text') {
-                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult);
+                let p = project3D(e.x, e.y, e.z, cameraX, activeCamY, cameraZ, currentFovMult, FOCAL_LENGTH, window.innerWidth, HORIZON_Y);
                 if(p) {
                     // Strict font clamp so it never blocks the screen
                     let fontSize = Math.max(12, Math.min(30, 20 * e.baseScale * p.scale)); 

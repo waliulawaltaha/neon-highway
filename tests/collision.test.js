@@ -1,6 +1,6 @@
-import test from 'node:test';
-import assert from 'node:assert';
-import { detectCollision3D } from '../js/collision.js';
+const test = require('node:test');
+const assert = require('node:assert');
+const { detectCollision3D } = require('../js/collision.js');
 
 test('detectCollision3D - direct hit', () => {
     const cameraZ = 1000;
