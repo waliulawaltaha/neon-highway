@@ -753,7 +753,7 @@
                         ctx.fillStyle = 'rgba(0, 187, 255, 0.2)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#0bf'; ctx.stroke();
                     }
                 }
-                drawSportsCar(e.x, e.y, e.z, e.w, e.h, e.color, e.vx || 0, e.type === 'player', activeCamY);
+                drawCar(e.x, e.y, e.z, e.w, e.h, e.color, e.vx || 0, e.type === 'player', activeCamY);
             } 
             else if (['gold', 'shield', 'boost'].includes(e.type)) { draw3DCollectible(e.x, e.y, e.z, e.w, e.type, activeCamY); }
             else if (e.type === 'particle') {
@@ -790,7 +790,7 @@
         soundCrash(); triggerScreenFlash('rgba(255, 0, 0, 0.8)'); gameContainer.classList.add('shake'); 
         let pZ = cameraZ + player.zOffset;
         createExplosion3D(player.x, player.y, pZ, '#0ff', 60, 100, 1500); createExplosion3D(player.x, player.y, pZ, '#fff', 50, 120, 1200);
-        finalScoreElement.innerText = Math.floor(score); 
+        finalScoreEl.innerText = Math.floor(score);
         setTimeout(() => { gameOverScreen.style.display = 'flex'; setTimeout(() => { gameOverScreen.style.opacity = '1'; }, 50); }, 1200);
         requestAnimationFrame(() => { draw(); });
     }
