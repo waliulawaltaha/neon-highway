@@ -434,7 +434,7 @@
     function update(dt) {
         if (isGameOver) { 
             for (let i = entities.length - 1; i >= 0; i--) { 
-                let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
+                let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) { entities[i] = entities[entities.length - 1]; entities.pop(); } }
             } return; 
         }
         
@@ -540,12 +540,12 @@
                 if (detectCollision3D(player, e, cameraZ)) {
                     if (player.boostTime > 0) {
                         createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
-                        addScore(100); entities.splice(i, 1); i--; continue;
+                        addScore(100); entities[i] = entities[entities.length - 1]; entities.pop(); i--; continue;
                     } else if (player.shield) {
                         player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
                         createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
                         entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
-                        entities.splice(i, 1); i--; continue;
+                        entities[i] = entities[entities.length - 1]; entities.pop(); i--; continue;
                     } else { endGame(); }
                 }
             } 
@@ -572,11 +572,11 @@
                         entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
                         player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
                     }
-                    entities.splice(i, 1); i--; continue;
+                    entities[i] = entities[entities.length - 1]; entities.pop(); i--; continue;
                 }
             }
             else if (e.type === 'particle' || e.type === 'text') {
-                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); i--; }
+                e.update(dt); if (e.life <= 0) { entities[i] = entities[entities.length - 1]; entities.pop(); i--; }
             }
         }
     }
