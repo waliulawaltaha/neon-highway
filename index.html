@@ -530,10 +530,12 @@
         }
 
         // Cleanup behind camera
-        while (entities.length > 0 && entities[0].z < cameraZ && entities[0].type !== 'particle' && entities[0].type !== 'text') {
-            if(entities[0].type === 'gold') breakCombo();
-            entities.shift();
+        let cleanupCount = 0;
+        while (cleanupCount < entities.length && entities[cleanupCount].z < cameraZ && entities[cleanupCount].type !== 'particle' && entities[cleanupCount].type !== 'text') {
+            if(entities[cleanupCount].type === 'gold') breakCombo();
+            cleanupCount++;
         }
+        if (cleanupCount > 0) entities.splice(0, cleanupCount);
 
         for (let i = 0; i < entities.length; i++) {
             let e = entities[i];
