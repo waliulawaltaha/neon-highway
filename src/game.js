@@ -107,7 +107,7 @@ function resetGame() {
         color: '#00ffff'
     };
 
-    entities = [player];
+    entities = [];
     effects = [];
     roadLines = [];
 
@@ -292,6 +292,8 @@ function update(dt) {
     camera.x += (player.x - camera.x) * dt * 5;
     camera.z = player.z - 300;
 
+    player = updateEntityState(player, dt, state);
+
     for (let i = 0; i < entities.length; i++) {
         if (entities[i].dead) continue;
         entities[i] = updateEntityState(entities[i], dt, state);
@@ -313,7 +315,7 @@ function update(dt) {
 
     if (!state.isGameOver) {
         for (let i = 0; i < entities.length; i++) {
-            if (entities[i].type === 'player' || entities[i].dead) continue;
+            if (entities[i].dead) continue;
 
             if (checkCollision(player, entities[i])) {
                 if (entities[i].type === 'obstacle') {
@@ -411,7 +413,7 @@ function drawGame() {
     const pFarC = project3DTo2D(0, state.groundY, camera.z + 2000, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
     const pNearC = project3DTo2D(0, state.groundY, camera.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
     if(pFarC && pNearC) {
-        ctx.setLineDash([20, 20]);
+        // Removed line dash
         ctx.beginPath();
         let plFar = project3DTo2D(-LANE_WIDTH/2, state.groundY, camera.z + 2000, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
         let plNear = project3DTo2D(-LANE_WIDTH/2, state.groundY, camera.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
@@ -422,7 +424,7 @@ function drawGame() {
         if(prFar && prNear) { ctx.moveTo(prNear.px, prNear.py); ctx.lineTo(prFar.px, prFar.py); }
 
         ctx.stroke();
-        ctx.setLineDash([]);
+        // Reset line dash
     }
 
     // Entities rely on chronological insertion for Z-sorting, so we draw from end of array to start (farthest to nearest)
@@ -433,9 +435,22 @@ function drawGame() {
         if (state.isGameOver && e.type === 'player') continue;
         if (e.dead) continue;
 
-        const proj = project3DTo2D(e.x, e.y, e.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
+        if (e.z > camera.z) {
+            const proj = project3DTo2D(e.x, e.y, e.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
+            if (proj) {
+                render3DBox(ctx, proj.px, proj.py, proj.scale, e);
+            }
+        }
         if (proj) {
             render3DBox(ctx, proj.px, proj.py, proj.scale, e);
+        }
+    }
+
+
+    if (!state.isGameOver) {
+        const projPlayer = project3DTo2D(player.x, player.y, player.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
+        if (projPlayer) {
+            render3DBox(ctx, projPlayer.px, projPlayer.py, projPlayer.scale, player);
         }
     }
 
