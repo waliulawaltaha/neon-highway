@@ -224,14 +224,18 @@
 
     let FOCAL_LENGTH = 600;
     let HORIZON_Y = 0;
-    let dpr = window.devicePixelRatio || 1;
     
+
+    let globalSunGrad = null;
     function resizeCanvas() {
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = window.innerWidth * dpr;
         canvas.height = window.innerHeight * dpr;
         ctx.scale(dpr, dpr);
         HORIZON_Y = window.innerHeight * 0.45; 
         FOCAL_LENGTH = Math.max(400, window.innerWidth * 0.8); 
+        globalSunGrad = ctx.createLinearGradient(0, HORIZON_Y - 250, 0, HORIZON_Y);
+        globalSunGrad.addColorStop(0, '#f0f'); globalSunGrad.addColorStop(1, '#ff0');
     }
     window.addEventListener('resize', () => { resizeCanvas(); if(!isGameRunning && !isGameOver) draw(); });
     resizeCanvas();
@@ -280,8 +284,10 @@
     };
     const GRAVITY = 3500; const JUMP_FORCE = 1400;
 
-    let entities = []; 
+    let entities = [];
+    let effects = [];
     let speedLines = [];
+    let carGradients = new Map();
 
     const ENEMY_TYPES = [
         { w: 180, h: 90, d: 300, color: '#f0f', speedMult: 0.6 }, 
@@ -364,7 +370,7 @@
     }
 
     function createExplosion3D(x, y, z, color, amount=20, speed=50, life=600) { 
-        for (let i = 0; i < amount; i++) entities.push(new Particle3D(x, y, z, color, speed, life)); 
+        for (let i = 0; i < amount; i++) effects.push(new Particle3D(x, y, z, color, speed, life));
     }
     function triggerScreenFlash(color) { flashOverlay.style.backgroundColor = color; flashOverlay.style.opacity = '1'; setTimeout(() => { flashOverlay.style.opacity = '0'; }, 50); }
     
@@ -376,7 +382,7 @@
     function breakCombo() {
         if(combo > 0) {
             combo = 0; multiplier = 1; updateHUD(); soundComboDrop();
-            entities.push(new FloatingText3D(player.x, player.y + 150, cameraZ + player.zOffset, "COMBO BROKEN", "#f00", 1.5));
+            effects.push(new FloatingText3D(player.x, player.y + 150, cameraZ + player.zOffset, "COMBO BROKEN", "#f00", 1.5));
         }
     }
 
@@ -396,7 +402,7 @@
         spawnTimer = 0; collectibleTimer = 0; 
         isGameOver = false; isGameRunning = true; isPaused = false;
         
-        entities = []; speedLines = [];
+        entities = []; speedLines = []; effects = [];
         scoreEl.innerText = score; updateSpeedometer(); gameContainer.classList.remove('shake');
         
         player.x = 0; player.y = 0; player.vx = 0; player.vy = 0; player.isJumping = false;
@@ -415,7 +421,7 @@
         if (score > savedHighScore) { savedHighScore = score; highScoreEl.innerText = Math.floor(savedHighScore); localStorage.setItem('neonHighScoreFinal', savedHighScore); }
         if (score >= level * 500) {
             level++; baseMinSpeed += 150; baseMaxSpeed += 150;
-            entities.push(new FloatingText3D(player.x, 200, cameraZ + 1200, `LEVEL ${level}`, "#f0f", 3));
+            effects.push(new FloatingText3D(player.x, 200, cameraZ + 1200, `LEVEL ${level}`, "#f0f", 3));
         }
     }
     
@@ -432,7 +438,7 @@
             } else if (player.shield) {
                 player.shield = false; updateHUD(); triggerScreenFlash('rgba(0, 187, 255, 0.4)');
                 createExplosion3D(e.x, e.y, e.z, e.color, 40, 50, 600);
-                entities.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
+                effects.push(new FloatingText3D(player.x, player.y+150, playerZ, "DEFLECTED!", "#0bf", 2.0));
                 return true;
             } else {
                 endGame();
@@ -442,17 +448,17 @@
             combo++; if(combo >= 15) multiplier = 4; else if(combo >= 8) multiplier = 3; else if(combo >= 3) multiplier = 2; updateHUD();
             soundCollect(1 + (multiplier * 0.1)); createExplosion3D(e.x, e.y, e.z, '#ff0', 15, 20, 300);
             let col = multiplier > 1 ? (multiplier > 2 ? '#f0f' : '#0ff') : '#ff0';
-            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, `+${50 * multiplier}`, col, 1.2 + (multiplier*0.2)));
+            effects.push(new FloatingText3D(player.x, player.y+120, playerZ, `+${50 * multiplier}`, col, 1.2 + (multiplier*0.2)));
             addScore(50 * multiplier);
             return true;
         } else if (e.type === 'shield') {
             soundShieldUp(); createExplosion3D(e.x, e.y, e.z, '#0bf', 25, 30, 400);
-            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "SHIELD UP", "#0bf", 1.8));
+            effects.push(new FloatingText3D(player.x, player.y+120, playerZ, "SHIELD UP", "#0bf", 1.8));
             player.shield = true; updateHUD(); addScore(10);
             return true;
         } else if (e.type === 'boost') {
             soundBoostUp(); createExplosion3D(e.x, e.y, e.z, '#0f0', 40, 40, 500);
-            entities.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
+            effects.push(new FloatingText3D(player.x, player.y+120, playerZ, "HYPER DRIVE!", "#0f0", 2.0));
             player.boostTime = 3000; powerBg.style.display = 'block'; addScore(50);
             return true;
         }
@@ -461,8 +467,8 @@
 
     function update(dt) {
         if (isGameOver) { 
-            for (let i = entities.length - 1; i >= 0; i--) { 
-                let e = entities[i]; if (e.type === 'particle' || e.type === 'text') { e.update(dt); if (e.life <= 0) entities.splice(i, 1); }
+            for (let i = effects.length - 1; i >= 0; i--) {
+                let e = effects[i]; e.update(dt); if (e.life <= 0) { effects[i] = effects[effects.length - 1]; effects.pop(); }
             } return; 
         }
         
@@ -514,11 +520,11 @@
 
         // Exhaust
         if (Math.random() > 0.2 && player.boostTime <= 0 && keys.up) { 
-            entities.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0ff', 15, 300)); 
-            entities.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0ff', 15, 300)); 
+            effects.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0ff', 15, 300));
+            effects.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0ff', 15, 300));
         } else if (player.boostTime > 0) {
-            entities.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0f0', 40, 200)); 
-            entities.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0f0', 40, 200)); 
+            effects.push(new Particle3D(player.x - 55, player.y + 15, playerZ - 120, '#0f0', 40, 200));
+            effects.push(new Particle3D(player.x + 55, player.y + 15, playerZ - 120, '#0f0', 40, 200));
         }
 
         // Add passive score based on speed
@@ -553,12 +559,16 @@
         }
 
         // Cleanup behind camera
-        let cleanupCount = 0;
-        while (cleanupCount < entities.length && entities[cleanupCount].z < cameraZ && entities[cleanupCount].type !== 'particle' && entities[cleanupCount].type !== 'text') {
-            if(entities[cleanupCount].type === 'gold') breakCombo();
-            cleanupCount++;
+        let aliveEntities = [];
+        for (let i = 0; i < entities.length; i++) {
+            let e = entities[i];
+            if (e.z < cameraZ) {
+                if (e.type === 'gold') breakCombo();
+                continue;
+            }
+            aliveEntities.push(e);
         }
-        if (cleanupCount > 0) entities.splice(0, cleanupCount);
+        entities = aliveEntities;
 
         for (let i = 0; i < entities.length; i++) {
             let e = entities[i];
@@ -567,7 +577,7 @@
                 e.z += e.speed * (dt/1000); 
                 if (detectCollision3D(player, e, cameraZ)) {
                     if (handleCollision(e, playerZ)) {
-                        entities.splice(i, 1); i--; continue;
+                        entities[i] = entities[entities.length - 1]; entities.pop(); i--; continue;
                     }
                 }
             } 
@@ -580,12 +590,17 @@
                 
                 if (detectCollision3D(player, e, cameraZ)) {
                     if (handleCollision(e, playerZ)) {
-                        entities.splice(i, 1); i--; continue;
+                        entities[i] = entities[entities.length - 1]; entities.pop(); i--; continue;
                     }
                 }
             }
-            else if (e.type === 'particle' || e.type === 'text') {
-                e.update(dt); if (e.life <= 0) { entities.splice(i, 1); i--; }
+        }
+
+        for (let i = effects.length - 1; i >= 0; i--) {
+            let e = effects[i];
+            e.update(dt);
+            if (e.life <= 0) {
+                effects[i] = effects[effects.length - 1]; effects.pop();
             }
         }
     }
@@ -600,9 +615,7 @@
 
         // Cyberpunk Sun & Horizon
         let panX = -cameraX * 0.1;
-        let sunGrad = ctx.createLinearGradient(0, HORIZON_Y - 250, 0, HORIZON_Y); 
-        sunGrad.addColorStop(0, '#f0f'); sunGrad.addColorStop(1, '#ff0');
-        ctx.fillStyle = sunGrad; 
+        ctx.fillStyle = globalSunGrad || '#ff0';
         ctx.beginPath(); ctx.arc(window.innerWidth / 2 + panX, HORIZON_Y, 200, Math.PI, 0); ctx.fill(); 
         ctx.fillStyle = '#050508'; for(let i=0; i<12; i++) { ctx.fillRect(0, HORIZON_Y - 25 - (i*20), window.innerWidth, i+4); }
 
@@ -672,9 +685,17 @@
         ctx.fillRect(-drawW*0.55, -drawH*0.4, drawW*0.25, drawH*0.45); 
         ctx.fillRect(drawW*0.30, -drawH*0.4, drawW*0.25, drawH*0.45); 
 
-        let bodyGrad = ctx.createLinearGradient(0, -drawH, 0, 0);
-        bodyGrad.addColorStop(0, color); bodyGrad.addColorStop(1, '#222');
-        ctx.fillStyle = bodyGrad; 
+        let gradKey = color + '_' + Math.round(drawH);
+        if(!carGradients.has(gradKey)) {
+            if(carGradients.size > 100) {
+                const firstKey = carGradients.keys().next().value;
+                carGradients.delete(firstKey);
+            }
+            let bodyGrad = ctx.createLinearGradient(0, -drawH, 0, 0);
+            bodyGrad.addColorStop(0, color); bodyGrad.addColorStop(1, '#222');
+            carGradients.set(gradKey, bodyGrad);
+        }
+        ctx.fillStyle = carGradients.get(gradKey);
         
         ctx.beginPath(); ctx.moveTo(-drawW*0.45, -drawH*0.6); ctx.lineTo(drawW*0.45, -drawH*0.6); 
         ctx.lineTo(drawW*0.55, 0); ctx.lineTo(-drawW*0.55, 0); ctx.fill(); 
@@ -741,7 +762,7 @@
             }
         }
 
-        let renderList = [...entities];
+        let renderList = [...entities, ...effects];
         if (!isGameOver && isGameRunning) {
             renderList.push({ type: 'player', x: player.x, y: player.y, z: cameraZ + player.zOffset, w: player.width, h: player.height, d: player.depth, color: player.boostTime > 0 ? '#0f0' : player.color, vx: player.vx });
         }
