@@ -5,7 +5,7 @@ import { checkCollision } from './collision.js';
 let canvas, ctx;
 let lastTime = 0;
 let fov = 300;
-let camera = { x: 0, y: -20, z: -100 };
+let camera = { x: 0, y: -150, z: -300 };
 
 // Game State
 let state = {
@@ -290,7 +290,7 @@ function update(dt) {
     state.score += (player.vz * dt) / 100;
 
     camera.x += (player.x - camera.x) * dt * 5;
-    camera.z = player.z - 100;
+    camera.z = player.z - 300;
 
     for (let i = 0; i < entities.length; i++) {
         if (entities[i].dead) continue;
@@ -367,11 +367,19 @@ function render3DBox(ctx, px, py, scale, entity) {
 function drawGame() {
     ctx.clearRect(0, 0, cachedWidth, cachedHeight);
 
+    // Draw Sky Gradient
     ctx.fillStyle = getBackgroundGradient();
     ctx.fillRect(0, 0, cachedWidth, cachedHeight);
 
+    // Calculate horizon
     const horizon = project3DTo2D(0, 0, 10000, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
+
     if (horizon) {
+        // Draw Ground
+        ctx.fillStyle = '#0a001a'; // Dark ground color
+        ctx.fillRect(0, horizon.py, cachedWidth, cachedHeight - horizon.py);
+
+        // Draw Horizon Line
         ctx.strokeStyle = '#ff00ff';
         ctx.lineWidth = 2;
         ctx.shadowBlur = 10;
@@ -383,6 +391,7 @@ function drawGame() {
         ctx.shadowBlur = 0;
     }
 
+    // Draw Road Lines
     ctx.strokeStyle = '#00ffff';
     ctx.lineWidth = 1;
     for(let i=0; i<roadLines.length; i++) {
@@ -398,6 +407,7 @@ function drawGame() {
         }
     }
 
+    // Draw Lane Dividers
     const pFarC = project3DTo2D(0, state.groundY, camera.z + 2000, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
     const pNearC = project3DTo2D(0, state.groundY, camera.z, camera.x, camera.y, camera.z, fov, cachedWidth, cachedHeight);
     if(pFarC && pNearC) {
