@@ -19,7 +19,7 @@ let state = {
 };
 
 export let keys = {};
-export let pointer = { x: null, isDown: false, startY: null };
+export let pointer = { x: null, y: null, isDown: false, startY: null };
 
 let cachedWidth = 0;
 let cachedHeight = 0;
@@ -56,6 +56,7 @@ function resizeCanvas() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     canvas.style.width = window.innerWidth + 'px';
     canvas.style.height = window.innerHeight + 'px';
@@ -131,6 +132,7 @@ function setupInputHandlers() {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         pointer.x = clientX;
+        pointer.y = clientY;
         pointer.startY = clientY;
         pointer.isDown = true;
     };
@@ -138,11 +140,14 @@ function setupInputHandlers() {
     const handlePointerMove = e => {
         if(!pointer.isDown) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         pointer.x = clientX;
+        pointer.y = clientY;
     };
 
     const handlePointerUp = e => {
         pointer.isDown = false;
+        pointer.y = null;
     };
 
     window.addEventListener('mousedown', handlePointerDown);
@@ -172,7 +177,7 @@ function handleInput() {
         if (pointer.x < window.innerWidth / 2) targetX = -1;
         else targetX = 1;
 
-        if (pointer.startY !== null && (pointer.startY - (window.event?.touches?.[0]?.clientY || window.event?.clientY || pointer.startY)) > 50 && !player.isJumping) {
+        if (pointer.startY !== null && pointer.y !== null && (pointer.startY - pointer.y) > 50 && !player.isJumping) {
             player.vy = -600;
             player.isJumping = true;
             pointer.startY = null;
@@ -440,9 +445,6 @@ function drawGame() {
             if (proj) {
                 render3DBox(ctx, proj.px, proj.py, proj.scale, e);
             }
-        }
-        if (proj) {
-            render3DBox(ctx, proj.px, proj.py, proj.scale, e);
         }
     }
 
