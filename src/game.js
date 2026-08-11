@@ -14,6 +14,12 @@ let state = {
     score: 0,
     highScore: 0,
     speedFactor: 1.0,
+    lives: 3,
+    maxLives: 3,
+    shieldCharges: 0,
+    invincibilityTimer: 0,
+    comboTimer: 0,
+    comboCount: 0,
     isGameOver: false,
     isPaused: false
 };
@@ -88,6 +94,11 @@ function getBackgroundGradient() {
 function resetGame() {
     state.score = 0;
     state.speedFactor = 1.0;
+    state.lives = state.maxLives;
+    state.shieldCharges = 0;
+    state.invincibilityTimer = 0;
+    state.comboTimer = 0;
+    state.comboCount = 0;
     state.isGameOver = false;
     state.isPaused = false;
 
@@ -197,7 +208,18 @@ function spawnEntities(dt) {
         const lane = Math.floor(Math.random() * 3) - 1;
         const x = lane * LANE_WIDTH;
 
-        if (Math.random() > 0.8) {
+        const roll = Math.random();
+        if (roll > 0.92) {
+            entities.push({
+                type: 'shield',
+                x: x,
+                y: -10,
+                z: player.z + 1500,
+                width: 22, height: 22, depth: 22,
+                color: '#00ffcc',
+                rotationY: 0
+            });
+        } else if (roll > 0.75) {
             entities.push({
                 type: 'cube',
                 x: x,
@@ -296,13 +318,18 @@ function update(dt) {
 
     camera.x += (player.x - camera.x) * dt * 5;
     camera.z = player.z - 300;
+    state.invincibilityTimer = Math.max(0, state.invincibilityTimer - dt);
+    state.comboTimer = Math.max(0, state.comboTimer - dt);
+    if (state.comboTimer === 0) {
+        state.comboCount = 0;
+    }
 
     player = updateEntityState(player, dt, state);
 
     for (let i = 0; i < entities.length; i++) {
         if (entities[i].dead) continue;
         entities[i] = updateEntityState(entities[i], dt, state);
-        if (entities[i].type === 'cube') {
+        if (entities[i].type === 'cube' || entities[i].type === 'shield') {
             entities[i].rotationY += dt * 5;
         }
     }
@@ -324,10 +351,32 @@ function update(dt) {
 
             if (checkCollision(player, entities[i])) {
                 if (entities[i].type === 'obstacle') {
-                    gameOver();
+                    if (state.invincibilityTimer > 0) continue;
+
+                    entities[i].dead = true;
+                    createExplosion(entities[i].x, entities[i].y - entities[i].height / 2, entities[i].z, entities[i].color);
+
+                    if (state.shieldCharges > 0) {
+                        state.shieldCharges--;
+                        playSynthSound(300, 'square', 0.12);
+                    } else {
+                        state.lives--;
+                        state.invincibilityTimer = 1.2;
+                        playSynthSound(120, 'square', 0.2);
+                        if (state.lives <= 0) {
+                            gameOver();
+                        }
+                    }
                 } else if (entities[i].type === 'cube') {
-                    state.score += 50;
+                    state.comboCount = state.comboTimer > 0 ? state.comboCount + 1 : 1;
+                    state.comboTimer = 2;
+                    const multiplier = Math.min(state.comboCount, 5);
+                    state.score += 50 * multiplier;
                     playSynthSound(800, 'sine', 0.1);
+                    entities[i].dead = true;
+                } else if (entities[i].type === 'shield') {
+                    state.shieldCharges = Math.min(state.shieldCharges + 1, 2);
+                    playSynthSound(600, 'sine', 0.12);
                     entities[i].dead = true;
                 }
             }
@@ -470,6 +519,11 @@ function drawGame() {
     ctx.fillText(`SCORE: ${Math.floor(state.score)}`, 20, 30);
     ctx.fillText(`HIGH: ${state.highScore}`, 20, 60);
     ctx.fillText(`SPEED: ${state.speedFactor.toFixed(2)}x`, 20, 90);
+    ctx.fillText(`LIVES: ${state.lives}`, 20, 120);
+    ctx.fillText(`SHIELDS: ${state.shieldCharges}`, 20, 150);
+    if (state.comboTimer > 0 && state.comboCount > 1) {
+        ctx.fillText(`COMBO x${Math.min(state.comboCount, 5)}`, 20, 180);
+    }
 
     if (state.isGameOver) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -480,7 +534,8 @@ function drawGame() {
         ctx.fillText('CRASHED!', cachedWidth/2, cachedHeight/2 - 20);
         ctx.fillStyle = '#fff';
         ctx.font = '20px "Courier New", Courier, monospace';
-        ctx.fillText('Press SPACE or Tap to Restart', cachedWidth/2, cachedHeight/2 + 20);
+        ctx.fillText(`Final Score: ${Math.floor(state.score)}`, cachedWidth/2, cachedHeight/2 + 20);
+        ctx.fillText('Press SPACE or Tap to Restart', cachedWidth/2, cachedHeight/2 + 55);
         ctx.textAlign = 'left';
 
         if (keys['Space'] || (pointer.isDown && pointer.x !== null)) {

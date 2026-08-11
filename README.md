@@ -8,14 +8,16 @@ Play it live here: https://neon-highway.waliulawaltaha.com
 * **Endless Arcade Gameplay:** The game gets progressively faster the longer you survive.
 * **Retro Synthwave Aesthetics:** Includes a CRT monitor scanline filter, neon glowing hitboxes, and particle explosions.
 * **Procedural 8-Bit Audio:** Sound effects are mathematically generated using the native Web Audio API—no external `.mp3` files needed!
+* **Arcade Progression Systems:** Three lives, collectible shield charges, and combo multipliers reward smart driving.
 * **Cross-Platform Controls:** Smooth physics-based steering that supports Keyboard, Mouse dragging, and Mobile Touch dragging.
 * **Local Storage:** Automatically saves your highest score in your browser.
 * **Single-File Build:** The entire game logic, styling, and audio fits neatly into one `index.html` file.
 
 ## 🎮 How to Play
 1. **Dodge the Traffic:** Avoid the slow Red trucks, standard Magenta cars, and fast Orange sports cars.
-2. **Collect Gold:** Grab the spinning yellow cubes for a +50 point bonus.
-3. **Survive:** The longer you drive, the faster the game gets. Crashing into another car ends the run.
+2. **Collect Gold:** Grab the spinning yellow cubes to build score combos.
+3. **Collect Shields:** Pick up cyan shield power-ups to absorb crashes.
+4. **Survive:** The longer you drive, the faster the game gets. Running out of lives ends the run.
 
 ### Controls
 * **Keyboard:** `Left / Right Arrows` or `A / D` to steer.
